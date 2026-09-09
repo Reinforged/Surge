@@ -1,13 +1,16 @@
 #ifndef SURGE_AST_H
 #define SURGE_AST_H
 
+#include "lexer.h"
+
 typedef enum {
     AST_PROGRAM,
     AST_STRING,
     AST_INTEGER,
     AST_CALL,
     AST_VARIABLE_DECLARATION,
-    AST_VARIABLE_REFERENCE
+    AST_VARIABLE_REFERENCE,
+    AST_BINARY
 } AstNodeType;
 
 typedef struct AstNode AstNode;
@@ -42,6 +45,12 @@ struct AstNode {
         struct {
             char *name;
         } variable_reference;
+        
+        struct {
+            AstNode *left;
+            TokenType operator;
+            AstNode *right;
+        } binary;
     };
 };
 
@@ -58,6 +67,12 @@ AstNode *ast_create_variable_declaration(
 );
 
 AstNode *ast_create_variable_reference(const char *name);
+
+AstNode *ast_create_binary(
+    AstNode *left,
+    TokenType operator,
+    AstNode *right
+);
 
 void ast_print(AstNode *node, int indent);
 void ast_free(AstNode *node);

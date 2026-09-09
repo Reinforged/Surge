@@ -96,7 +96,54 @@ static AstNode *parse_integer(Parser *parser)
     return ast_create_integer(value);
 }
 
-static AstNode *parse_variable_declaration(Parser *parser) {
+static AstNode *parse_primary(Parser *parser)
+{
+    if (parser->current.type == TOKEN_STRING)
+    {
+        advance(parser);
+        return parse_string(parser);
+    }
+
+    if (parser->current.type == TOKEN_NUMBER)
+    {
+        advance(parser);
+        return parse_integer(parser);
+    }
+
+    if (parser->current.type == TOKEN_IDENTIFIER)
+    {
+        advance(parser);
+
+        char *name = token_to_string(parser->previous);
+        AstNode *node = ast_create_variable_reference(name);
+        free(name);
+
+        return node;
+    }
+
+    parser_error(parser, "Expected an expression.");
+    return NULL;
+}
+
+static AstNode *parse_expression(Parser *parser)
+{
+    AstNode *left = parse_primary(parser);
+
+    while (parser->current.type == TOKEN_PLUS)
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *right = parse_primary(parser);
+
+        left = ast_create_binary(left, operator, right);
+    }
+
+    return left;
+}
+
+static AstNode *parse_variable_declaration(Parser *parser)
+{
     Token name_token = parser->previous;
     char *name = token_to_string(name_token);
 
@@ -106,26 +153,7 @@ static AstNode *parse_variable_declaration(Parser *parser) {
         "Expected '=' after variable name."
     );
 
-    AstNode *value = NULL;
-
-    if (parser->current.type == TOKEN_STRING)
-    {
-        advance(parser);
-        value = parse_string(parser);
-    }
-    else if (parser->current.type == TOKEN_NUMBER)
-    {
-        advance(parser);
-        value = parse_integer(parser);
-    }
-    else
-    {
-        free(name);
-        parser_error(
-            parser,
-            "Expected a string or integer after '='."
-        );
-    }
+    AstNode *value = parse_expression(parser);
 
     AstNode *declaration =
         ast_create_variable_declaration(name, value);

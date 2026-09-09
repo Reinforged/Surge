@@ -129,6 +129,28 @@ AstNode *ast_create_variable_reference(const char *name) {
     return node;
 }
 
+AstNode *ast_create_binary(
+    AstNode *left,
+    TokenType operator,
+    AstNode *right
+)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_BINARY;
+    node->binary.left = left;
+    node->binary.operator = operator;
+    node->binary.right = right;
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
@@ -182,6 +204,12 @@ void ast_print(AstNode *node, int indent) {
             printf("VariableReference: %s\n",
                    node->variable_reference.name);
             break;
+            
+        case AST_BINARY:
+            printf("BinaryExpression\n");
+            ast_print(node->binary.left, indent + 1);
+            ast_print(node->binary.right, indent + 1);
+            break;
     }
 }
 
@@ -218,6 +246,11 @@ void ast_free(AstNode *node) {
 
         case AST_VARIABLE_REFERENCE:
             free(node->variable_reference.name);
+            break;
+            
+        case AST_BINARY:
+            ast_free(node->binary.left);
+            ast_free(node->binary.right);
             break;
     }
 

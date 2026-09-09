@@ -9,7 +9,8 @@ typedef enum {
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
     TOKEN_EQUAL,
-    TOKEN_NUMBER
+    TOKEN_NUMBER,
+    TOKEN_PLUS
 } TokenType;
 
 typedef struct {

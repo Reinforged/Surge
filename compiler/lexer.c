@@ -138,6 +138,9 @@ Token lexer_next(Lexer *lexer)
             
         case '=':
             return make_token(lexer, TOKEN_EQUAL);
+            
+        case '+':
+            return make_token(lexer, TOKEN_PLUS);
     }
 
     return make_token(lexer, TOKEN_EOF);
