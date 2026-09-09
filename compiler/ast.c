@@ -81,6 +81,38 @@ AstNode *ast_create_call(const char *name, AstNode *argument) {
     return node;
 }
 
+AstNode *ast_create_variable_declaration(
+    const char *name,
+    AstNode *value
+) {
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL) {
+        fprintf(stderr, "Out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_VARIABLE_DECLARATION;
+    node->variable_declaration.name = copy_string(name);
+    node->variable_declaration.value = value;
+
+    return node;
+}
+
+AstNode *ast_create_variable_reference(const char *name) {
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL) {
+        fprintf(stderr, "Out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_VARIABLE_REFERENCE;
+    node->variable_reference.name = copy_string(name);
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
@@ -115,6 +147,21 @@ void ast_print(AstNode *node, int indent) {
 
             ast_print(node->call.argument, indent + 2);
             break;
+            
+        case AST_VARIABLE_DECLARATION:
+            printf("VariableDeclaration: %s\n",
+                   node->variable_declaration.name);
+
+            print_indent(indent + 1);
+            printf("value:\n");
+
+            ast_print(node->variable_declaration.value, indent + 2);
+            break;
+
+        case AST_VARIABLE_REFERENCE:
+            printf("VariableReference: %s\n",
+                   node->variable_reference.name);
+            break;
     }
 }
 
@@ -139,6 +186,15 @@ void ast_free(AstNode *node) {
         case AST_CALL:
             free(node->call.name);
             ast_free(node->call.argument);
+            break;
+            
+        case AST_VARIABLE_DECLARATION:
+            free(node->variable_declaration.name);
+            ast_free(node->variable_declaration.value);
+            break;
+
+        case AST_VARIABLE_REFERENCE:
+            free(node->variable_reference.name);
             break;
     }
 

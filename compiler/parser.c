@@ -85,6 +85,36 @@ static AstNode *parse_string(Parser *parser)
     return node;
 }
 
+static AstNode *parse_variable_declaration(Parser *parser) {
+    Token name_token = parser->previous;
+    char *name = token_to_string(name_token);
+
+    consume(
+        parser,
+        TOKEN_EQUAL,
+        "Expected '=' after variable name."
+    );
+
+    if (parser->current.type != TOKEN_STRING) {
+        free(name);
+        parser_error(
+            parser,
+            "Expected a value after '='."
+        );
+    }
+
+    advance(parser);
+
+    AstNode *value = parse_string(parser);
+
+    AstNode *declaration =
+        ast_create_variable_declaration(name, value);
+
+    free(name);
+
+    return declaration;
+}
+
 static AstNode *parse_call(Parser *parser)
 {
     char *name = token_to_string(parser->previous);
@@ -95,19 +125,33 @@ static AstNode *parse_call(Parser *parser)
         "Expected '(' after function name."
     );
 
-    if (parser->current.type != TOKEN_STRING)
+    AstNode *argument = NULL;
+
+    if (parser->current.type == TOKEN_STRING)
+    {
+        advance(parser);
+        argument = parse_string(parser);
+    }
+    else if (parser->current.type == TOKEN_IDENTIFIER)
+    {
+        advance(parser);
+
+        char *variable_name =
+            token_to_string(parser->previous);
+
+        argument =
+            ast_create_variable_reference(variable_name);
+
+        free(variable_name);
+    }
+    else
     {
         free(name);
-
         parser_error(
             parser,
-            "Expected a string argument."
+            "Expected a string or variable."
         );
     }
-
-    advance(parser);
-
-    AstNode *argument = parse_string(parser);
 
     consume(
         parser,
@@ -133,17 +177,37 @@ void parser_init(Parser *parser, Lexer *lexer)
     advance(parser);
 }
 
-AstNode *parser_parse(Parser *parser) {
+AstNode *parser_parse(Parser *parser)
+{
     AstNode *program = ast_create_program();
 
-    while (parser->current.type != TOKEN_EOF) {
-        if (parser->current.type != TOKEN_IDENTIFIER) {
-            parser_error(parser, "Expected a function call.");
+    while (parser->current.type != TOKEN_EOF)
+    {
+        if (parser->current.type != TOKEN_IDENTIFIER)
+        {
+            parser_error(parser, "Expected a statement.");
         }
 
         advance(parser);
 
-        AstNode *statement = parse_call(parser);
+        AstNode *statement = NULL;
+
+        if (parser->current.type == TOKEN_EQUAL)
+        {
+            statement = parse_variable_declaration(parser);
+        }
+        else if (parser->current.type == TOKEN_LEFT_PAREN)
+        {
+            statement = parse_call(parser);
+        }
+        else
+        {
+            parser_error(
+                parser,
+                "Expected '=' or '(' after identifier."
+            );
+        }
+
         ast_program_add(program, statement);
     }
 
