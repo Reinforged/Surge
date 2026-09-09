@@ -248,6 +248,33 @@ static void execute(
         case AST_VARIABLE_REFERENCE:
         case AST_BINARY:
             break;
+
+        case AST_IF:
+        {
+            Value condition = evaluate(
+                node->if_statement.condition,
+                environment
+            );
+
+            if (condition.type != VALUE_BOOL)
+            {
+                fprintf(
+                    stderr,
+                    "Surge runtime error: if condition must be a boolean.\n"
+                );
+                exit(1);
+            }
+
+            if (condition.boolean)
+            {
+                execute(
+                    node->if_statement.body,
+                    environment
+                );
+            }
+
+            break;
+        }
     }
 }
 
