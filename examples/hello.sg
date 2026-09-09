@@ -1,4 +1,2 @@
-print("Hello, Surge!")
-print("This is Surge.")
 name = "Reinforged"
 print(name)
