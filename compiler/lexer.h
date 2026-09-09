@@ -1,0 +1,33 @@
+#ifndef SURGE_LEXER_H
+#define SURGE_LEXER_H
+
+typedef enum {
+    TOKEN_EOF,
+
+    TOKEN_IDENTIFIER,
+    TOKEN_STRING,
+
+    TOKEN_LEFT_PAREN,
+    TOKEN_RIGHT_PAREN
+} TokenType;
+
+typedef struct {
+    TokenType type;
+
+    const char *start;
+    int length;
+
+    int line;
+} Token;
+
+typedef struct {
+    const char *start;
+    const char *current;
+
+    int line;
+} Lexer;
+
+void lexer_init(Lexer *lexer, const char *source);
+Token lexer_next(Lexer *lexer);
+
+#endif
