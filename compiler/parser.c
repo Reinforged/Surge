@@ -125,11 +125,14 @@ static AstNode *parse_primary(Parser *parser)
     return NULL;
 }
 
-static AstNode *parse_expression(Parser *parser)
+static AstNode *parse_multiplication(Parser *parser)
 {
     AstNode *left = parse_primary(parser);
 
-    while (parser->current.type == TOKEN_PLUS)
+    while (
+        parser->current.type == TOKEN_STAR ||
+        parser->current.type == TOKEN_SLASH
+    )
     {
         TokenType operator = parser->current.type;
         advance(parser);
@@ -140,6 +143,31 @@ static AstNode *parse_expression(Parser *parser)
     }
 
     return left;
+}
+
+static AstNode *parse_addition(Parser *parser)
+{
+    AstNode *left = parse_multiplication(parser);
+
+    while (
+        parser->current.type == TOKEN_PLUS ||
+        parser->current.type == TOKEN_MINUS
+    )
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *right = parse_multiplication(parser);
+
+        left = ast_create_binary(left, operator, right);
+    }
+
+    return left;
+}
+
+static AstNode *parse_expression(Parser *parser)
+{
+    return parse_addition(parser);
 }
 
 static AstNode *parse_variable_declaration(Parser *parser)

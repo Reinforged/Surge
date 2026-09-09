@@ -141,6 +141,15 @@ Token lexer_next(Lexer *lexer)
             
         case '+':
             return make_token(lexer, TOKEN_PLUS);
+            
+        case '-':
+            return make_token(lexer, TOKEN_MINUS);
+
+        case '*':
+            return make_token(lexer, TOKEN_STAR);
+
+        case '/':
+            return make_token(lexer, TOKEN_SLASH);
     }
 
     return make_token(lexer, TOKEN_EOF);

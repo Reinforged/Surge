@@ -10,7 +10,10 @@ typedef enum {
     TOKEN_RIGHT_PAREN,
     TOKEN_EQUAL,
     TOKEN_NUMBER,
-    TOKEN_PLUS
+    TOKEN_PLUS,
+    TOKEN_MINUS,
+    TOKEN_STAR,
+    TOKEN_SLASH
 } TokenType;
 
 typedef struct {

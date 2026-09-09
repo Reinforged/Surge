@@ -104,31 +104,51 @@ static Value evaluate(
 
         return *value;
     }
-    
+ 
     if (node->type == AST_BINARY)
     {
         Value left = evaluate(node->binary.left, environment);
         Value right = evaluate(node->binary.right, environment);
 
-        if (node->binary.operator == TOKEN_PLUS)
+        if (left.type != VALUE_INT || right.type != VALUE_INT)
         {
-            if (left.type != VALUE_INT || right.type != VALUE_INT)
-            {
-                fprintf(
-                    stderr,
-                    "Surge runtime error: '+' requires integer values.\n"
-                );
-                exit(1);
-            }
-
-            return value_int(left.integer + right.integer);
+            fprintf(
+                stderr,
+                "Surge runtime error: arithmetic requires integer values.\n"
+            );
+            exit(1);
         }
 
-        fprintf(
-            stderr,
-            "Surge runtime error: unknown binary operator.\n"
-        );
-        exit(1);
+        switch (node->binary.operator)
+        {
+            case TOKEN_PLUS:
+                return value_int(left.integer + right.integer);
+
+            case TOKEN_MINUS:
+                return value_int(left.integer - right.integer);
+
+            case TOKEN_STAR:
+                return value_int(left.integer * right.integer);
+
+            case TOKEN_SLASH:
+                if (right.integer == 0)
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: division by zero.\n"
+                    );
+                    exit(1);
+                }
+
+                return value_int(left.integer / right.integer);
+
+            default:
+                fprintf(
+                    stderr,
+                    "Surge runtime error: unknown binary operator.\n"
+                );
+                exit(1);
+        }
     }
 
     fprintf(
