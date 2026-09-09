@@ -37,6 +37,18 @@ static void set_variable(
     Value value
 )
 {
+    Value *existing = find_variable(
+        environment,
+        name
+    );
+
+    if (existing != NULL)
+    {
+        value_free(existing);
+        *existing = value;
+        return;
+    }
+    
     Variable *new_variables = realloc(
         environment->variables,
         sizeof(Variable) * (size_t)(environment->count + 1)
@@ -269,6 +281,13 @@ static void execute(
             {
                 execute(
                     node->if_statement.body,
+                    environment
+                );
+            }
+            else if (node->if_statement.else_body != NULL)
+            {
+                execute(
+                    node->if_statement.else_body,
                     environment
                 );
             }

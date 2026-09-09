@@ -3,7 +3,8 @@
 
 typedef enum {
     TOKEN_EOF,
-
+    TOKEN_INDENT,
+    TOKEN_DEDENT,
     TOKEN_IDENTIFIER,
     TOKEN_STRING,
     TOKEN_LEFT_PAREN,
@@ -15,6 +16,8 @@ typedef enum {
     TOKEN_LESS_EQUAL,
     TOKEN_GREATER,
     TOKEN_GREATER_EQUAL,
+    TOKEN_IF,
+    TOKEN_ELSE,
     TOKEN_NUMBER,
     TOKEN_PLUS,
     TOKEN_MINUS,
@@ -34,8 +37,11 @@ typedef struct {
 typedef struct {
     const char *start;
     const char *current;
-
     int line;
+    int indent_stack[64];
+    int indent_count;
+    int pending_dedents;
+    int at_line_start;
 } Lexer;
 
 void lexer_init(Lexer *lexer, const char *source);

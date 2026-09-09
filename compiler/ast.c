@@ -151,6 +151,28 @@ AstNode *ast_create_binary(
     return node;
 }
 
+AstNode *ast_create_if(
+    AstNode *condition,
+    AstNode *body,
+    AstNode *else_body
+)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_IF;
+    node->if_statement.condition = condition;
+    node->if_statement.body = body;
+    node->if_statement.else_body = else_body;
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
@@ -254,6 +276,18 @@ void ast_print(AstNode *node, int indent) {
                     printf("unknown\n");
                     break;
             }
+            
+        case AST_IF:
+            printf("IfStatement\n");
+            ast_print(node->if_statement.condition, indent + 1);
+            ast_print(node->if_statement.body, indent + 1);
+
+            if (node->if_statement.else_body != NULL)
+            {
+                ast_print(node->if_statement.else_body, indent + 1);
+            }
+
+            break;
 
             ast_print(node->binary.left, indent + 1);
             ast_print(node->binary.right, indent + 1);
@@ -299,6 +333,12 @@ void ast_free(AstNode *node) {
         case AST_BINARY:
             ast_free(node->binary.left);
             ast_free(node->binary.right);
+            break;
+            
+        case AST_IF:
+            ast_free(node->if_statement.condition);
+            ast_free(node->if_statement.body);
+            ast_free(node->if_statement.else_body);
             break;
     }
 

@@ -10,7 +10,8 @@ typedef enum {
     AST_CALL,
     AST_VARIABLE_DECLARATION,
     AST_VARIABLE_REFERENCE,
-    AST_BINARY
+    AST_BINARY,
+    AST_IF
 } AstNodeType;
 
 typedef struct AstNode AstNode;
@@ -51,6 +52,12 @@ struct AstNode {
             TokenType operator;
             AstNode *right;
         } binary;
+        
+        struct {
+            AstNode *condition;
+            AstNode *body;
+            AstNode *else_body;
+        } if_statement;
     };
 };
 
@@ -72,6 +79,12 @@ AstNode *ast_create_binary(
     AstNode *left,
     TokenType operator,
     AstNode *right
+);
+
+AstNode *ast_create_if(
+    AstNode *condition,
+    AstNode *body,
+    AstNode *else_body
 );
 
 void ast_print(AstNode *node, int indent);

@@ -1,9 +1,37 @@
-name = "Reinforged"
-age = 20
-next_age = age + 1
-adult = age >= 18
+print("Testing if")
 
-print(name)
-print(age)
-print(next_age)
-print(adult)
+age = 20
+
+if age >= 18
+    print("Adult")
+
+print("Testing if else")
+
+age = 15
+
+if age >= 18
+    print("Adult")
+else
+    print("Minor")
+
+print("Testing else if")
+
+age = 16
+
+if age >= 18
+    print("Adult")
+else if age >= 13
+    print("Teenager")
+else
+    print("Child")
+
+print("Testing else")
+
+age = 8
+
+if age >= 18
+    print("Adult")
+else if age >= 13
+    print("Teenager")
+else
+    print("Child")
