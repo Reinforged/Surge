@@ -85,6 +85,16 @@ static Token identifier_token(Lexer *lexer)
     return make_token(lexer, TOKEN_IDENTIFIER);
 }
 
+static Token number_token(Lexer *lexer)
+{
+    while (isdigit((unsigned char)peek_char(lexer)))
+    {
+        advance_char(lexer);
+    }
+
+    return make_token(lexer, TOKEN_NUMBER);
+}
+
 void lexer_init(Lexer *lexer, const char *source)
 {
     lexer->start = source;
@@ -109,6 +119,11 @@ Token lexer_next(Lexer *lexer)
     {
         return identifier_token(lexer);
     }
+    
+    if (isdigit((unsigned char)c))
+    {
+        return number_token(lexer);
+    }
 
     switch (c)
     {
@@ -120,6 +135,9 @@ Token lexer_next(Lexer *lexer)
 
         case '"':
             return string_token(lexer);
+            
+        case '=':
+            return make_token(lexer, TOKEN_EQUAL);
     }
 
     return make_token(lexer, TOKEN_EOF);

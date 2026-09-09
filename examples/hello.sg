@@ -1,3 +1,6 @@
 name = "Reinforged"
+age = 14
+
 print(name)
+print(age)
 

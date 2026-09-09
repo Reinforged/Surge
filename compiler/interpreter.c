@@ -77,6 +77,11 @@ static Value evaluate(
     {
         return value_string(node->string.value);
     }
+    
+    if (node->type == AST_INTEGER)
+    {
+        return value_int(node->integer.value);
+    }
 
     if (node->type == AST_VARIABLE_REFERENCE)
     {
@@ -171,6 +176,7 @@ static void execute(
             break;
 
         case AST_STRING:
+        case AST_INTEGER:
         case AST_VARIABLE_REFERENCE:
             break;
     }

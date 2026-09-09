@@ -85,6 +85,17 @@ static AstNode *parse_string(Parser *parser)
     return node;
 }
 
+static AstNode *parse_integer(Parser *parser)
+{
+    char *text = token_to_string(parser->previous);
+
+    long value = strtol(text, NULL, 10);
+
+    free(text);
+
+    return ast_create_integer(value);
+}
+
 static AstNode *parse_variable_declaration(Parser *parser) {
     Token name_token = parser->previous;
     char *name = token_to_string(name_token);
@@ -95,17 +106,26 @@ static AstNode *parse_variable_declaration(Parser *parser) {
         "Expected '=' after variable name."
     );
 
-    if (parser->current.type != TOKEN_STRING) {
+    AstNode *value = NULL;
+
+    if (parser->current.type == TOKEN_STRING)
+    {
+        advance(parser);
+        value = parse_string(parser);
+    }
+    else if (parser->current.type == TOKEN_NUMBER)
+    {
+        advance(parser);
+        value = parse_integer(parser);
+    }
+    else
+    {
         free(name);
         parser_error(
             parser,
-            "Expected a value after '='."
+            "Expected a string or integer after '='."
         );
     }
-
-    advance(parser);
-
-    AstNode *value = parse_string(parser);
 
     AstNode *declaration =
         ast_create_variable_declaration(name, value);

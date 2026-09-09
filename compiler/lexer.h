@@ -6,9 +6,10 @@ typedef enum {
 
     TOKEN_IDENTIFIER,
     TOKEN_STRING,
-
     TOKEN_LEFT_PAREN,
-    TOKEN_RIGHT_PAREN
+    TOKEN_RIGHT_PAREN,
+    TOKEN_EQUAL,
+    TOKEN_NUMBER
 } TokenType;
 
 typedef struct {
