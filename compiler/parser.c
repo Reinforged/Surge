@@ -133,27 +133,19 @@ void parser_init(Parser *parser, Lexer *lexer)
     advance(parser);
 }
 
-AstNode *parser_parse(Parser *parser)
-{
-    if (parser->current.type != TOKEN_IDENTIFIER)
-    {
-        parser_error(
-            parser,
-            "Expected a function call."
-        );
+AstNode *parser_parse(Parser *parser) {
+    AstNode *program = ast_create_program();
+
+    while (parser->current.type != TOKEN_EOF) {
+        if (parser->current.type != TOKEN_IDENTIFIER) {
+            parser_error(parser, "Expected a function call.");
+        }
+
+        advance(parser);
+
+        AstNode *statement = parse_call(parser);
+        ast_program_add(program, statement);
     }
 
-    advance(parser);
-
-    AstNode *node = parse_call(parser);
-
-    if (parser->current.type != TOKEN_EOF)
-    {
-        parser_error(
-            parser,
-            "Expected the end of the file."
-        );
-    }
-
-    return node;
+    return program;
 }

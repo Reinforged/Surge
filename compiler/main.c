@@ -1,19 +1,64 @@
 #include <stdio.h>
+#include <stdlib.h>
 
+#include "lexer.h"
+#include "parser.h"
 #include "ast.h"
 
-int main(void)
-{
-    AstNode *message = ast_create_string("Hello, Surge!");
+static char *read_file(const char *path) {
+    FILE *file = fopen(path, "rb");
 
-    AstNode *program = ast_create_call(
-        "print",
-        message
-    );
+    if (file == NULL) {
+        fprintf(stderr, "Could not open file: %s\n", path);
+        exit(1);
+    }
 
-    ast_print(program, 0);
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    rewind(file);
 
-    ast_free(program);
+    if (size < 0) {
+        fclose(file);
+        fprintf(stderr, "Could not determine file size.\n");
+        exit(1);
+    }
+
+    char *buffer = malloc((size_t)size + 1);
+
+    if (buffer == NULL) {
+        fclose(file);
+        fprintf(stderr, "Out of memory.\n");
+        exit(1);
+    }
+
+    size_t bytes_read = fread(buffer, 1, (size_t)size, file);
+    buffer[bytes_read] = '\0';
+
+    fclose(file);
+
+    return buffer;
+}
+
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: surge <file.sg>\n");
+        return 1;
+    }
+
+    char *source = read_file(argv[1]);
+
+    Lexer lexer;
+    lexer_init(&lexer, source);
+
+    Parser parser;
+    parser_init(&parser, &lexer);
+
+    AstNode *ast = parser_parse(&parser);
+
+    ast_print(ast, 0);
+
+    ast_free(ast);
+    free(source);
 
     return 0;
 }

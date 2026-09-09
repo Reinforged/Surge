@@ -2,6 +2,7 @@
 #define SURGE_AST_H
 
 typedef enum {
+    AST_PROGRAM,
     AST_STRING,
     AST_CALL
 } AstNodeType;
@@ -13,6 +14,11 @@ struct AstNode {
 
     union {
         struct {
+            AstNode **statements;
+            int count;
+        } program;
+
+        struct {
             char *value;
         } string;
 
@@ -22,6 +28,9 @@ struct AstNode {
         } call;
     };
 };
+
+AstNode *ast_create_program(void);
+void ast_program_add(AstNode *program, AstNode *statement);
 
 AstNode *ast_create_string(const char *value);
 AstNode *ast_create_call(const char *name, AstNode *argument);
