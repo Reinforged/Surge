@@ -1,21 +1,9 @@
-name= "Reinforged"
+name = "Reinforged"
 age = 20
 next_age = age + 1
-future_age = next_age + 5
+adult = age >= 18
 
 print(name)
 print(age)
 print(next_age)
-print(future_age)
-print(5 + 5)
-print(age + 1)
-
-print("DIVISION TEST")
-
-print(10 + 5)
-print(10 - 5)
-print(10 * 5)
-print(10 / 5)
-print(10 + 5 * 2)
-print(20 - 6 / 2)
-print(10 / 0)
+print(adult)

@@ -165,9 +165,33 @@ static AstNode *parse_addition(Parser *parser)
     return left;
 }
 
+static AstNode *parse_comparison(Parser *parser)
+{
+    AstNode *left = parse_addition(parser);
+
+    while (
+        parser->current.type == TOKEN_EQUAL_EQUAL ||
+        parser->current.type == TOKEN_BANG_EQUAL ||
+        parser->current.type == TOKEN_LESS ||
+        parser->current.type == TOKEN_LESS_EQUAL ||
+        parser->current.type == TOKEN_GREATER ||
+        parser->current.type == TOKEN_GREATER_EQUAL
+    )
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *right = parse_addition(parser);
+
+        left = ast_create_binary(left, operator, right);
+    }
+
+    return left;
+}
+
 static AstNode *parse_expression(Parser *parser)
 {
-    return parse_addition(parser);
+    return parse_comparison(parser);
 }
 
 static AstNode *parse_variable_declaration(Parser *parser)

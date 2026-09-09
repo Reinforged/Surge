@@ -102,6 +102,17 @@ void lexer_init(Lexer *lexer, const char *source)
     lexer->line = 1;
 }
 
+static int match_char(Lexer *lexer, char expected)
+{
+    if (is_at_end(lexer) || *lexer->current != expected)
+    {
+        return 0;
+    }
+
+    lexer->current++;
+    return 1;
+}
+
 Token lexer_next(Lexer *lexer)
 {
     skip_whitespace(lexer);
@@ -137,7 +148,36 @@ Token lexer_next(Lexer *lexer)
             return string_token(lexer);
             
         case '=':
-            return make_token(lexer, TOKEN_EQUAL);
+            return make_token(
+                lexer,
+                match_char(lexer, '=') ?
+                    TOKEN_EQUAL_EQUAL :
+                    TOKEN_EQUAL
+            );
+            
+        case '!':
+            return make_token(
+                lexer,
+                match_char(lexer, '=') ?
+                    TOKEN_BANG_EQUAL :
+                    TOKEN_EOF
+            );
+
+        case '<':
+            return make_token(
+                lexer,
+                match_char(lexer, '=') ?
+                    TOKEN_LESS_EQUAL :
+                    TOKEN_LESS
+            );
+
+        case '>':
+            return make_token(
+                lexer,
+                match_char(lexer, '=') ?
+                    TOKEN_GREATER_EQUAL :
+                    TOKEN_GREATER
+            );
             
         case '+':
             return make_token(lexer, TOKEN_PLUS);

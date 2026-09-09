@@ -77,7 +77,7 @@ static Value evaluate(
     {
         return value_string(node->string.value);
     }
-    
+
     if (node->type == AST_INTEGER)
     {
         return value_int(node->integer.value);
@@ -94,27 +94,32 @@ static Value evaluate(
         {
             fprintf(
                 stderr,
-                "Surge runtime error: variable '%s' "
-                "is not defined.\n",
+                "Surge runtime error: variable '%s' is not defined.\n",
                 node->variable_reference.name
             );
-
             exit(1);
         }
 
         return *value;
     }
- 
+
     if (node->type == AST_BINARY)
     {
-        Value left = evaluate(node->binary.left, environment);
-        Value right = evaluate(node->binary.right, environment);
+        Value left = evaluate(
+            node->binary.left,
+            environment
+        );
+
+        Value right = evaluate(
+            node->binary.right,
+            environment
+        );
 
         if (left.type != VALUE_INT || right.type != VALUE_INT)
         {
             fprintf(
                 stderr,
-                "Surge runtime error: arithmetic requires integer values.\n"
+                "Surge runtime error: comparison and arithmetic require integer values.\n"
             );
             exit(1);
         }
@@ -142,6 +147,24 @@ static Value evaluate(
 
                 return value_int(left.integer / right.integer);
 
+            case TOKEN_EQUAL_EQUAL:
+                return value_bool(left.integer == right.integer);
+
+            case TOKEN_BANG_EQUAL:
+                return value_bool(left.integer != right.integer);
+
+            case TOKEN_LESS:
+                return value_bool(left.integer < right.integer);
+
+            case TOKEN_LESS_EQUAL:
+                return value_bool(left.integer <= right.integer);
+
+            case TOKEN_GREATER:
+                return value_bool(left.integer > right.integer);
+
+            case TOKEN_GREATER_EQUAL:
+                return value_bool(left.integer >= right.integer);
+
             default:
                 fprintf(
                     stderr,
@@ -155,7 +178,6 @@ static Value evaluate(
         stderr,
         "Surge runtime error: invalid expression.\n"
     );
-
     exit(1);
 }
 

@@ -206,7 +206,55 @@ void ast_print(AstNode *node, int indent) {
             break;
             
         case AST_BINARY:
-            printf("BinaryExpression\n");
+            printf("BinaryExpression: ");
+
+            switch (node->binary.operator)
+            {
+                case TOKEN_PLUS:
+                    printf("+\n");
+                    break;
+
+                case TOKEN_MINUS:
+                    printf("-\n");
+                    break;
+
+                case TOKEN_STAR:
+                    printf("*\n");
+                    break;
+
+                case TOKEN_SLASH:
+                    printf("/\n");
+                    break;
+
+                case TOKEN_EQUAL_EQUAL:
+                    printf("==\n");
+                    break;
+
+                case TOKEN_BANG_EQUAL:
+                    printf("!=\n");
+                    break;
+
+                case TOKEN_LESS:
+                    printf("<\n");
+                    break;
+
+                case TOKEN_LESS_EQUAL:
+                    printf("<=\n");
+                    break;
+
+                case TOKEN_GREATER:
+                    printf(">\n");
+                    break;
+
+                case TOKEN_GREATER_EQUAL:
+                    printf(">=\n");
+                    break;
+
+                default:
+                    printf("unknown\n");
+                    break;
+            }
+
             ast_print(node->binary.left, indent + 1);
             ast_print(node->binary.right, indent + 1);
             break;
