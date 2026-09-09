@@ -173,33 +173,7 @@ static AstNode *parse_call(Parser *parser)
         "Expected '(' after function name."
     );
 
-    AstNode *argument = NULL;
-
-    if (parser->current.type == TOKEN_STRING)
-    {
-        advance(parser);
-        argument = parse_string(parser);
-    }
-    else if (parser->current.type == TOKEN_IDENTIFIER)
-    {
-        advance(parser);
-
-        char *variable_name =
-            token_to_string(parser->previous);
-
-        argument =
-            ast_create_variable_reference(variable_name);
-
-        free(variable_name);
-    }
-    else
-    {
-        free(name);
-        parser_error(
-            parser,
-            "Expected a string or variable."
-        );
-    }
+    AstNode *argument = parse_expression(parser);
 
     consume(
         parser,
