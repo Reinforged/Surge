@@ -1,4 +1,5 @@
 #include "interpreter.h"
+#include "value.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 
 typedef struct {
     char *name;
-    AstNode *value;
+    Value value;
 } Variable;
 
 typedef struct {
@@ -14,7 +15,7 @@ typedef struct {
     int count;
 } Environment;
 
-static AstNode *find_variable(
+static Value *find_variable(
     Environment *environment,
     const char *name
 )
@@ -23,7 +24,7 @@ static AstNode *find_variable(
     {
         if (strcmp(environment->variables[i].name, name) == 0)
         {
-            return environment->variables[i].value;
+            return &environment->variables[i].value;
         }
     }
 
@@ -33,7 +34,7 @@ static AstNode *find_variable(
 static void set_variable(
     Environment *environment,
     const char *name,
-    AstNode *value
+    Value value
 )
 {
     Variable *new_variables = realloc(
@@ -67,19 +68,19 @@ static void set_variable(
     environment->count++;
 }
 
-static AstNode *evaluate(
+static Value evaluate(
     AstNode *node,
     Environment *environment
 )
 {
     if (node->type == AST_STRING)
     {
-        return node;
+        return value_string(node->string.value);
     }
 
     if (node->type == AST_VARIABLE_REFERENCE)
     {
-        AstNode *value = find_variable(
+        Value *value = find_variable(
             environment,
             node->variable_reference.name
         );
@@ -96,7 +97,7 @@ static AstNode *evaluate(
             exit(1);
         }
 
-        return value;
+        return *value;
     }
 
     fprintf(
@@ -131,7 +132,7 @@ static void execute(
 
         case AST_VARIABLE_DECLARATION:
         {
-            AstNode *value = evaluate(
+            Value value = evaluate(
                 node->variable_declaration.value,
                 environment
             );
@@ -148,28 +149,12 @@ static void execute(
         case AST_CALL:
             if (strcmp(node->call.name, "print") == 0)
             {
-                AstNode *argument = evaluate(
+                Value argument = evaluate(
                     node->call.argument,
                     environment
                 );
 
-                if (argument->type == AST_STRING)
-                {
-                    printf(
-                        "%s\n",
-                        argument->string.value
-                    );
-                }
-                else
-                {
-                    fprintf(
-                        stderr,
-                        "Surge runtime error: "
-                        "print() received an unsupported value.\n"
-                    );
-
-                    exit(1);
-                }
+                value_print(&argument);
             }
             else
             {
