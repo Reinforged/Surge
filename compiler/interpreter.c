@@ -10,21 +10,43 @@ typedef struct {
     Value value;
 } Variable;
 
-typedef struct {
+typedef struct Environment Environment;
+
+struct Environment {
     Variable *variables;
     int count;
-} Environment;
+    Environment *parent;
+};
 
-static Value *find_variable(
-    Environment *environment,
-    const char *name
-)
+static Environment *environment_create(Environment *parent)
 {
-    for (int i = 0; i < environment->count; i++)
+    Environment *environment = malloc(sizeof(Environment));
+
+    if (environment == NULL)
     {
-        if (strcmp(environment->variables[i].name, name) == 0)
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    environment->variables = NULL;
+    environment->count = 0;
+    environment->parent = parent;
+
+    return environment;
+}
+
+static Variable *find_variable(Environment *environment, const char *name)
+{
+    for (Environment *current = environment;
+         current != NULL;
+         current = current->parent)
+    {
+        for (int i = 0; i < current->count; i++)
         {
-            return &environment->variables[i].value;
+            if (strcmp(current->variables[i].name, name) == 0)
+            {
+                return &current->variables[i];
+            }
         }
     }
 
@@ -37,47 +59,55 @@ static void set_variable(
     Value value
 )
 {
-    Value *existing = find_variable(
-        environment,
-        name
-    );
+    Variable *variable = find_variable(environment, name);
 
-    if (existing != NULL)
+    if (variable != NULL)
     {
-        value_free(existing);
-        *existing = value;
+        value_free(&variable->value);
+        variable->value = value;
         return;
     }
-    
-    Variable *new_variables = realloc(
+
+    Variable *variables = realloc(
         environment->variables,
-        sizeof(Variable) * (size_t)(environment->count + 1)
+        sizeof(Variable) * (environment->count + 1)
     );
 
-    if (new_variables == NULL)
+    if (variables == NULL)
     {
         fprintf(stderr, "Surge: out of memory.\n");
         exit(1);
     }
 
-    environment->variables = new_variables;
+    environment->variables = variables;
 
-    environment->variables[environment->count].name =
-        malloc(strlen(name) + 1);
+    Variable *new_variable =
+        &environment->variables[environment->count];
 
-    if (environment->variables[environment->count].name == NULL)
+    new_variable->name = malloc(strlen(name) + 1);
+
+    if (new_variable->name == NULL)
     {
         fprintf(stderr, "Surge: out of memory.\n");
         exit(1);
     }
 
-    strcpy(
-        environment->variables[environment->count].name,
-        name
-    );
+    strcpy(new_variable->name, name);
+    new_variable->value = value;
 
-    environment->variables[environment->count].value = value;
     environment->count++;
+}
+
+static void environment_free(Environment *environment)
+{
+    for (int i = 0; i < environment->count; i++)
+    {
+        free(environment->variables[i].name);
+        value_free(&environment->variables[i].value);
+    }
+
+    free(environment->variables);
+    free(environment);
 }
 
 static Value evaluate(
@@ -132,12 +162,12 @@ static Value evaluate(
 
     if (node->type == AST_VARIABLE_REFERENCE)
     {
-        Value *value = find_variable(
+        Variable *variable = find_variable(
             environment,
             node->variable_reference.name
         );
 
-        if (value == NULL)
+        if (variable == NULL)
         {
             fprintf(
                 stderr,
@@ -147,7 +177,12 @@ static Value evaluate(
             exit(1);
         }
 
-        return *value;
+        if (variable->value.type == VALUE_STRING)
+        {
+            return value_string(variable->value.string);
+        }
+
+        return variable->value;
     }
 
     if (node->type == AST_BINARY)
@@ -392,17 +427,19 @@ static void execute(
 
             if (condition.boolean)
             {
-                execute(
-                    node->if_statement.body,
-                    environment
-                );
+                Environment *block =
+                    environment_create(environment);
+
+                execute(node->if_statement.body, block);
+                environment_free(block);
             }
             else if (node->if_statement.else_body != NULL)
             {
-                execute(
-                    node->if_statement.else_body,
-                    environment
-                );
+                Environment *block =
+                    environment_create(environment);
+
+                execute(node->if_statement.else_body, block);
+                environment_free(block);
             }
 
             break;
@@ -431,10 +468,12 @@ static void execute(
                     break;
                 }
 
-                execute(
-                    node->while_statement.body,
-                    environment
-                );
+                Environment *block =
+                    environment_create(environment);
+
+                execute(node->while_statement.body, block);
+
+                environment_free(block);
             }
 
             break;
@@ -444,17 +483,10 @@ static void execute(
 
 void interpreter_run(AstNode *program)
 {
-    Environment environment;
+    Environment *environment =
+        environment_create(NULL);
 
-    environment.variables = NULL;
-    environment.count = 0;
+    execute(program, environment);
 
-    execute(program, &environment);
-
-    for (int i = 0; i < environment.count; i++)
-    {
-        free(environment.variables[i].name);
-    }
-
-    free(environment.variables);
+    environment_free(environment);
 }
