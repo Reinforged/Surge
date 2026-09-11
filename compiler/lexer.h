@@ -18,6 +18,7 @@ typedef enum {
     TOKEN_GREATER_EQUAL,
     TOKEN_IF,
     TOKEN_ELSE,
+    TOKEN_WHILE,
     TOKEN_TRUE,
     TOKEN_FALSE,
     TOKEN_AND,

@@ -13,7 +13,8 @@ typedef enum {
     AST_VARIABLE_REFERENCE,
     AST_BINARY,
     AST_UNARY,
-    AST_IF
+    AST_IF,
+    AST_WHILE
 } AstNodeType;
 
 typedef struct AstNode AstNode;
@@ -69,6 +70,11 @@ struct AstNode {
             AstNode *body;
             AstNode *else_body;
         } if_statement;
+        
+        struct {
+            AstNode *condition;
+            AstNode *body;
+        } while_statement;
     };
 };
 
@@ -102,6 +108,11 @@ AstNode *ast_create_if(
     AstNode *condition,
     AstNode *body,
     AstNode *else_body
+);
+
+AstNode *ast_create_while(
+    AstNode *condition,
+    AstNode *body
 );
 
 void ast_print(AstNode *node, int indent);

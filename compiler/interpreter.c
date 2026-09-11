@@ -407,6 +407,38 @@ static void execute(
 
             break;
         }
+            
+        case AST_WHILE:
+        {
+            while (1)
+            {
+                Value condition = evaluate(
+                    node->while_statement.condition,
+                    environment
+                );
+
+                if (condition.type != VALUE_BOOL)
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: while condition must be a boolean.\n"
+                    );
+                    exit(1);
+                }
+
+                if (!condition.boolean)
+                {
+                    break;
+                }
+
+                execute(
+                    node->while_statement.body,
+                    environment
+                );
+            }
+
+            break;
+        }
     }
 }
 

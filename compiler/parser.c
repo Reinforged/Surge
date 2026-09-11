@@ -328,6 +328,7 @@ static AstNode *parse_or(Parser *parser);
 static AstNode *parse_and(Parser *parser);
 static AstNode *parse_not(Parser *parser);
 static AstNode *parse_if(Parser *parser);
+static AstNode *parse_while(Parser *parser);
 
 static AstNode *parse_block(Parser *parser)
 {
@@ -352,6 +353,13 @@ static AstNode *parse_block(Parser *parser)
         {
             advance(parser);
             ast_program_add(block, parse_if(parser));
+            continue;
+        }
+        
+        if (parser->current.type == TOKEN_WHILE)
+        {
+            advance(parser);
+            ast_program_add(block, parse_while(parser));
             continue;
         }
 
@@ -421,6 +429,17 @@ static AstNode *parse_if(Parser *parser)
     );
 }
 
+static AstNode *parse_while(Parser *parser)
+{
+    AstNode *condition = parse_expression(parser);
+    AstNode *body = parse_block(parser);
+
+    return ast_create_while(
+        condition,
+        body
+    );
+}
+
 
 AstNode *parser_parse(Parser *parser)
 {
@@ -432,6 +451,13 @@ AstNode *parser_parse(Parser *parser)
         {
             advance(parser);
             ast_program_add(program, parse_if(parser));
+            continue;
+        }
+        
+        if (parser->current.type == TOKEN_WHILE)
+        {
+            advance(parser);
+            ast_program_add(program, parse_while(parser));
             continue;
         }
 

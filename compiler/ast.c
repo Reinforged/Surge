@@ -209,6 +209,26 @@ AstNode *ast_create_if(
     return node;
 }
 
+AstNode *ast_create_while(
+    AstNode *condition,
+    AstNode *body
+)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_WHILE;
+    node->while_statement.condition = condition;
+    node->while_statement.body = body;
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
@@ -374,6 +394,21 @@ void ast_print(AstNode *node, int indent) {
             }
 
             break;
+            
+        case AST_WHILE:
+            printf("WhileStatement\n");
+
+            ast_print(
+                node->while_statement.condition,
+                indent + 1
+            );
+
+            ast_print(
+                node->while_statement.body,
+                indent + 1
+            );
+
+            break;
     }
 }
 
@@ -429,7 +464,12 @@ void ast_free(AstNode *node) {
             ast_free(node->if_statement.body);
             ast_free(node->if_statement.else_body);
             break;
-    }
+            
+        case AST_WHILE:
+            ast_free(node->while_statement.condition);
+            ast_free(node->while_statement.body);
+            break;
+                }
 
     free(node);
 }
