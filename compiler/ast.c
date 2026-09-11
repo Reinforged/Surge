@@ -276,7 +276,7 @@ void ast_print(AstNode *node, int indent) {
                     printf("unknown\n");
                     break;
             }
-            
+
         case AST_IF:
             printf("IfStatement\n");
             ast_print(node->if_statement.condition, indent + 1);
