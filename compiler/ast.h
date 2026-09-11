@@ -7,6 +7,7 @@ typedef enum {
     AST_PROGRAM,
     AST_STRING,
     AST_INTEGER,
+    AST_BOOLEAN,
     AST_CALL,
     AST_VARIABLE_DECLARATION,
     AST_VARIABLE_REFERENCE,
@@ -32,6 +33,10 @@ struct AstNode {
         struct {
             long value;
         } integer;
+        
+        struct {
+                   int value;
+               } boolean;
 
         struct {
             char *name;
@@ -66,6 +71,7 @@ void ast_program_add(AstNode *program, AstNode *statement);
 
 AstNode *ast_create_string(const char *value);
 AstNode *ast_create_integer(long value);
+AstNode *ast_create_boolean(int boolean);
 AstNode *ast_create_call(const char *name, AstNode *argument);
 
 AstNode *ast_create_variable_declaration(

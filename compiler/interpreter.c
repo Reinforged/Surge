@@ -94,6 +94,11 @@ static Value evaluate(
     {
         return value_int(node->integer.value);
     }
+    
+    if (node->type == AST_BOOLEAN)
+    {
+        return value_bool(node->boolean.value);
+    }
 
     if (node->type == AST_VARIABLE_REFERENCE)
     {
@@ -257,6 +262,7 @@ static void execute(
 
         case AST_STRING:
         case AST_INTEGER:
+        case AST_BOOLEAN:
         case AST_VARIABLE_REFERENCE:
         case AST_BINARY:
             break;

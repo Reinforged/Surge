@@ -109,6 +109,18 @@ static AstNode *parse_primary(Parser *parser)
         advance(parser);
         return parse_integer(parser);
     }
+    
+    if (parser->current.type == TOKEN_TRUE)
+    {
+        advance(parser);
+        return ast_create_boolean(1);
+    }
+
+    if (parser->current.type == TOKEN_FALSE)
+    {
+        advance(parser);
+        return ast_create_boolean(0);
+    }
 
     if (parser->current.type == TOKEN_IDENTIFIER)
     {

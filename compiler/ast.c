@@ -82,6 +82,22 @@ AstNode *ast_create_integer(long value)
     return node;
 }
 
+AstNode *ast_create_boolean(int boolean)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_BOOLEAN;
+    node->boolean.value = boolean != 0;
+
+    return node;
+}
+
 AstNode *ast_create_call(const char *name, AstNode *argument) {
     AstNode *node = malloc(sizeof(AstNode));
 
@@ -202,6 +218,13 @@ void ast_print(AstNode *node, int indent) {
         case AST_INTEGER:
             printf("IntegerLiteral: %ld\n", node->integer.value);
             break;
+            
+        case AST_BOOLEAN:
+            printf(
+                "Boolean: %s\n",
+                node->boolean.value ? "true" : "false"
+            );
+            break;
 
         case AST_CALL:
             printf("CallExpression: %s\n", node->call.name);
@@ -314,6 +337,9 @@ void ast_free(AstNode *node) {
             break;
             
         case AST_INTEGER:
+            break;
+            
+        case AST_BOOLEAN:
             break;
 
         case AST_CALL:
