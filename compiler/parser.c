@@ -297,20 +297,50 @@ static AstNode *parse_call(Parser *parser)
         "Expected '(' after function name."
     );
 
-    AstNode *argument = NULL;
+    AstNode **arguments = NULL;
+    int argument_count = 0;
 
     if (parser->current.type != TOKEN_RIGHT_PAREN)
     {
-        argument = parse_expression(parser);
+        while (1)
+        {
+            AstNode *argument = parse_expression(parser);
+
+            AstNode **new_arguments = realloc(
+                arguments,
+                sizeof(AstNode *) * (argument_count + 1)
+            );
+
+            if (new_arguments == NULL)
+            {
+                fprintf(stderr, "Out of memory.\n");
+                exit(1);
+            }
+
+            arguments = new_arguments;
+            arguments[argument_count] = argument;
+            argument_count++;
+
+            if (parser->current.type != TOKEN_COMMA)
+            {
+                break;
+            }
+
+            advance(parser);
+        }
     }
 
     consume(
         parser,
         TOKEN_RIGHT_PAREN,
-        "Expected ')' after function argument."
+        "Expected ')' after function arguments."
     );
 
-    AstNode *node = ast_create_call(name, argument);
+    AstNode *node = ast_create_call(
+        name,
+        arguments,
+        argument_count
+    );
 
     free(name);
 
@@ -476,28 +506,38 @@ static AstNode *parse_function(Parser *parser)
 
     if (parser->current.type != TOKEN_RIGHT_PAREN)
     {
-        if (parser->current.type != TOKEN_IDENTIFIER)
+        while (1)
         {
-            parser_error(parser, "Expected parameter name.");
+            if (parser->current.type != TOKEN_IDENTIFIER)
+            {
+                parser_error(parser, "Expected parameter name.");
+            }
+
+            char **new_parameters = realloc(
+                parameters,
+                sizeof(char *) * (parameter_count + 1)
+            );
+
+            if (new_parameters == NULL)
+            {
+                fprintf(stderr, "Out of memory.\n");
+                exit(1);
+            }
+
+            parameters = new_parameters;
+            parameters[parameter_count] =
+                token_to_string(parser->current);
+
+            parameter_count++;
+            advance(parser);
+
+            if (parser->current.type != TOKEN_COMMA)
+            {
+                break;
+            }
+
+            advance(parser);
         }
-
-        char **new_parameters = realloc(
-            parameters,
-            sizeof(char *) * (parameter_count + 1)
-        );
-
-        if (new_parameters == NULL)
-        {
-            fprintf(stderr, "Out of memory.\n");
-            exit(1);
-        }
-
-        parameters = new_parameters;
-        parameters[parameter_count] =
-            token_to_string(parser->current);
-
-        parameter_count++;
-        advance(parser);
     }
 
     consume(

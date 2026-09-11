@@ -43,7 +43,8 @@ struct AstNode {
 
         struct {
             char *name;
-            AstNode *argument;
+            AstNode **arguments;
+            int argument_count;
         } call;
         
         struct {
@@ -92,7 +93,12 @@ void ast_program_add(AstNode *program, AstNode *statement);
 AstNode *ast_create_string(const char *value);
 AstNode *ast_create_integer(long value);
 AstNode *ast_create_boolean(int boolean);
-AstNode *ast_create_call(const char *name, AstNode *argument);
+
+AstNode *ast_create_call(
+    const char *name,
+    AstNode **arguments,
+    int argument_count
+);
 
 AstNode *ast_create_variable_declaration(
     const char *name,

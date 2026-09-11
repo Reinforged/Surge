@@ -98,17 +98,34 @@ AstNode *ast_create_boolean(int boolean)
     return node;
 }
 
-AstNode *ast_create_call(const char *name, AstNode *argument) {
+AstNode *ast_create_call(
+    const char *name,
+    AstNode **arguments,
+    int argument_count
+)
+{
     AstNode *node = malloc(sizeof(AstNode));
 
-    if (node == NULL) {
+    if (node == NULL)
+    {
         fprintf(stderr, "Out of memory.\n");
         exit(1);
     }
 
     node->type = AST_CALL;
-    node->call.name = copy_string(name);
-    node->call.argument = argument;
+
+    node->call.name = malloc(strlen(name) + 1);
+
+    if (node->call.name == NULL)
+    {
+        fprintf(stderr, "Out of memory.\n");
+        exit(1);
+    }
+
+    strcpy(node->call.name, name);
+
+    node->call.arguments = arguments;
+    node->call.argument_count = argument_count;
 
     return node;
 }
@@ -291,12 +308,14 @@ void ast_print(AstNode *node, int indent) {
             break;
 
         case AST_CALL:
-            printf("CallExpression: %s\n", node->call.name);
+            print_indent(indent);
+            printf("CALL %s\n", node->call.name);
 
-            print_indent(indent + 1);
-            printf("argument:\n");
+            for (int i = 0; i < node->call.argument_count; i++)
+            {
+                ast_print(node->call.arguments[i], indent + 2);
+            }
 
-            ast_print(node->call.argument, indent + 2);
             break;
             
         case AST_VARIABLE_DECLARATION:
@@ -471,7 +490,13 @@ void ast_free(AstNode *node)
 
         case AST_CALL:
             free(node->call.name);
-            ast_free(node->call.argument);
+
+            for (int i = 0; i < node->call.argument_count; i++)
+            {
+                ast_free(node->call.arguments[i]);
+            }
+
+            free(node->call.arguments);
             break;
 
         case AST_VARIABLE_DECLARATION:
