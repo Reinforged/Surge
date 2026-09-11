@@ -251,21 +251,21 @@ void parser_init(Parser *parser, Lexer *lexer)
     advance(parser);
 }
 
-static AstNode *parse_if(Parser *parser)
-{
-    AstNode *condition = parse_expression(parser);
+static AstNode *parse_if(Parser *parser);
 
+static AstNode *parse_block(Parser *parser)
+{
     if (parser->current.type != TOKEN_INDENT)
     {
         parser_error(
             parser,
-            "Expected an indented block after if condition."
+            "Expected an indented block."
         );
     }
 
     advance(parser);
 
-    AstNode *body = ast_create_program();
+    AstNode *block = ast_create_program();
 
     while (
         parser->current.type != TOKEN_DEDENT &&
@@ -275,7 +275,7 @@ static AstNode *parse_if(Parser *parser)
         if (parser->current.type == TOKEN_IF)
         {
             advance(parser);
-            ast_program_add(body, parse_if(parser));
+            ast_program_add(block, parse_if(parser));
             continue;
         }
 
@@ -304,13 +304,22 @@ static AstNode *parse_if(Parser *parser)
             );
         }
 
-        ast_program_add(body, statement);
+        ast_program_add(block, statement);
     }
 
     if (parser->current.type == TOKEN_DEDENT)
     {
         advance(parser);
     }
+
+    return block;
+}
+
+static AstNode *parse_if(Parser *parser)
+{
+    AstNode *condition = parse_expression(parser);
+
+    AstNode *body = parse_block(parser);
 
     AstNode *else_body = NULL;
 
@@ -325,68 +334,7 @@ static AstNode *parse_if(Parser *parser)
         }
         else
         {
-            if (parser->current.type != TOKEN_INDENT)
-            {
-                parser_error(
-                    parser,
-                    "Expected an indented block after else."
-                );
-            }
-
-            advance(parser);
-
-            else_body = ast_create_program();
-
-            while (
-                parser->current.type != TOKEN_DEDENT &&
-                parser->current.type != TOKEN_EOF
-            )
-            {
-                if (parser->current.type == TOKEN_IF)
-                {
-                    advance(parser);
-                    ast_program_add(
-                        else_body,
-                        parse_if(parser)
-                    );
-                    continue;
-                }
-
-                if (parser->current.type != TOKEN_IDENTIFIER)
-                {
-                    parser_error(parser, "Expected a statement.");
-                }
-
-                advance(parser);
-
-                AstNode *statement = NULL;
-
-                if (parser->current.type == TOKEN_EQUAL)
-                {
-                    statement =
-                        parse_variable_declaration(parser);
-                }
-                else if (
-                    parser->current.type == TOKEN_LEFT_PAREN
-                )
-                {
-                    statement = parse_call(parser);
-                }
-                else
-                {
-                    parser_error(
-                        parser,
-                        "Expected '=' or '(' after identifier."
-                    );
-                }
-
-                ast_program_add(else_body, statement);
-            }
-
-            if (parser->current.type == TOKEN_DEDENT)
-            {
-                advance(parser);
-            }
+            else_body = parse_block(parser);
         }
     }
 
