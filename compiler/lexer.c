@@ -122,6 +122,29 @@ static Token identifier_token(Lexer *lexer)
     {
         return make_token(lexer, TOKEN_FALSE);
     }
+    
+    if (length == 3 &&
+        lexer->start[0] == 'a' &&
+        lexer->start[1] == 'n' &&
+        lexer->start[2] == 'd')
+    {
+        return make_token(lexer, TOKEN_AND);
+    }
+
+    if (length == 2 &&
+        lexer->start[0] == 'o' &&
+        lexer->start[1] == 'r')
+    {
+        return make_token(lexer, TOKEN_OR);
+    }
+
+    if (length == 3 &&
+        lexer->start[0] == 'n' &&
+        lexer->start[1] == 'o' &&
+        lexer->start[2] == 't')
+    {
+        return make_token(lexer, TOKEN_NOT);
+    }
 
     return make_token(lexer, TOKEN_IDENTIFIER);
 }

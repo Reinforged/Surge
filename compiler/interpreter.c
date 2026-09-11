@@ -99,6 +99,36 @@ static Value evaluate(
     {
         return value_bool(node->boolean.value);
     }
+    
+    if (node->type == AST_UNARY)
+    {
+        Value operand = evaluate(
+            node->unary.operand,
+            environment
+        );
+
+        if (operand.type != VALUE_BOOL)
+        {
+            fprintf(
+                stderr,
+                "Surge runtime error: 'not' requires a boolean value.\n"
+            );
+            exit(1);
+        }
+
+        switch (node->unary.operator)
+        {
+            case TOKEN_NOT:
+                return value_bool(!operand.boolean);
+
+            default:
+                fprintf(
+                    stderr,
+                    "Surge runtime error: unknown unary operator.\n"
+                );
+                exit(1);
+        }
+    }
 
     if (node->type == AST_VARIABLE_REFERENCE)
     {
@@ -122,6 +152,82 @@ static Value evaluate(
 
     if (node->type == AST_BINARY)
     {
+        if (node->binary.operator == TOKEN_AND)
+        {
+            Value left = evaluate(
+                node->binary.left,
+                environment
+            );
+
+            if (left.type != VALUE_BOOL)
+            {
+                fprintf(
+                    stderr,
+                    "Surge runtime error: 'and' requires boolean values.\n"
+                );
+                exit(1);
+            }
+
+            if (!left.boolean)
+            {
+                return value_bool(0);
+            }
+
+            Value right = evaluate(
+                node->binary.right,
+                environment
+            );
+
+            if (right.type != VALUE_BOOL)
+            {
+                fprintf(
+                    stderr,
+                    "Surge runtime error: 'and' requires boolean values.\n"
+                );
+                exit(1);
+            }
+
+            return value_bool(right.boolean);
+        }
+
+        if (node->binary.operator == TOKEN_OR)
+        {
+            Value left = evaluate(
+                node->binary.left,
+                environment
+            );
+
+            if (left.type != VALUE_BOOL)
+            {
+                fprintf(
+                    stderr,
+                    "Surge runtime error: 'or' requires boolean values.\n"
+                );
+                exit(1);
+            }
+
+            if (left.boolean)
+            {
+                return value_bool(1);
+            }
+
+            Value right = evaluate(
+                node->binary.right,
+                environment
+            );
+
+            if (right.type != VALUE_BOOL)
+            {
+                fprintf(
+                    stderr,
+                    "Surge runtime error: 'or' requires boolean values.\n"
+                );
+                exit(1);
+            }
+
+            return value_bool(right.boolean);
+        }
+
         Value left = evaluate(
             node->binary.left,
             environment
@@ -265,6 +371,7 @@ static void execute(
         case AST_BOOLEAN:
         case AST_VARIABLE_REFERENCE:
         case AST_BINARY:
+        case AST_UNARY:
             break;
 
         case AST_IF:

@@ -201,9 +201,69 @@ static AstNode *parse_comparison(Parser *parser)
     return left;
 }
 
+static AstNode *parse_not(Parser *parser)
+{
+    if (parser->current.type == TOKEN_NOT)
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *operand = parse_not(parser);
+
+        return ast_create_unary(
+            operator,
+            operand
+        );
+    }
+
+    return parse_comparison(parser);
+}
+
+static AstNode *parse_and(Parser *parser)
+{
+    AstNode *left = parse_not(parser);
+
+    while (parser->current.type == TOKEN_AND)
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *right = parse_not(parser);
+
+        left = ast_create_binary(
+            left,
+            operator,
+            right
+        );
+    }
+
+    return left;
+}
+
+static AstNode *parse_or(Parser *parser)
+{
+    AstNode *left = parse_and(parser);
+
+    while (parser->current.type == TOKEN_OR)
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *right = parse_and(parser);
+
+        left = ast_create_binary(
+            left,
+            operator,
+            right
+        );
+    }
+
+    return left;
+}
+
 static AstNode *parse_expression(Parser *parser)
 {
-    return parse_comparison(parser);
+    return parse_or(parser);
 }
 
 static AstNode *parse_variable_declaration(Parser *parser)
@@ -263,6 +323,10 @@ void parser_init(Parser *parser, Lexer *lexer)
     advance(parser);
 }
 
+static AstNode *parse_if(Parser *parser);
+static AstNode *parse_or(Parser *parser);
+static AstNode *parse_and(Parser *parser);
+static AstNode *parse_not(Parser *parser);
 static AstNode *parse_if(Parser *parser);
 
 static AstNode *parse_block(Parser *parser)

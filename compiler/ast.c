@@ -167,6 +167,26 @@ AstNode *ast_create_binary(
     return node;
 }
 
+AstNode *ast_create_unary(
+    TokenType operator,
+    AstNode *operand
+)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_UNARY;
+    node->unary.operator = operator;
+    node->unary.operand = operand;
+
+    return node;
+}
+
 AstNode *ast_create_if(
     AstNode *condition,
     AstNode *body,
@@ -295,25 +315,64 @@ void ast_print(AstNode *node, int indent) {
                     printf(">=\n");
                     break;
 
+                case TOKEN_AND:
+                    printf("and\n");
+                    break;
+
+                case TOKEN_OR:
+                    printf("or\n");
+                    break;
+
                 default:
                     printf("unknown\n");
                     break;
             }
 
+            ast_print(node->binary.left, indent + 1);
+            ast_print(node->binary.right, indent + 1);
+            break;
+
+        case AST_UNARY:
+            printf("UnaryExpression: ");
+
+            switch (node->unary.operator)
+            {
+                case TOKEN_NOT:
+                    printf("not\n");
+                    break;
+
+                default:
+                    printf("unknown\n");
+                    break;
+            }
+
+            ast_print(
+                node->unary.operand,
+                indent + 1
+            );
+            break;
+
         case AST_IF:
             printf("IfStatement\n");
-            ast_print(node->if_statement.condition, indent + 1);
-            ast_print(node->if_statement.body, indent + 1);
+
+            ast_print(
+                node->if_statement.condition,
+                indent + 1
+            );
+
+            ast_print(
+                node->if_statement.body,
+                indent + 1
+            );
 
             if (node->if_statement.else_body != NULL)
             {
-                ast_print(node->if_statement.else_body, indent + 1);
+                ast_print(
+                    node->if_statement.else_body,
+                    indent + 1
+                );
             }
 
-            break;
-
-            ast_print(node->binary.left, indent + 1);
-            ast_print(node->binary.right, indent + 1);
             break;
     }
 }
@@ -360,6 +419,10 @@ void ast_free(AstNode *node) {
             ast_free(node->binary.left);
             ast_free(node->binary.right);
             break;
+            
+        case AST_UNARY:
+                    ast_free(node->unary.operand);
+                    break;
             
         case AST_IF:
             ast_free(node->if_statement.condition);
