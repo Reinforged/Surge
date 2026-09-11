@@ -229,6 +229,26 @@ AstNode *ast_create_while(
     return node;
 }
 
+AstNode *ast_create_function(
+    const char *name,
+    AstNode *body
+)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_FUNCTION;
+    node->function.name = copy_string(name);
+    node->function.body = body;
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
@@ -409,6 +429,11 @@ void ast_print(AstNode *node, int indent) {
             );
 
             break;
+            
+        case AST_FUNCTION:
+            printf("FunctionDeclaration: %s\n", node->function.name);
+            ast_print(node->function.body, indent + 1);
+            break;
     }
 }
 
@@ -468,6 +493,11 @@ void ast_free(AstNode *node) {
         case AST_WHILE:
             ast_free(node->while_statement.condition);
             ast_free(node->while_statement.body);
+            break;
+            
+        case AST_FUNCTION:
+            free(node->function.name);
+            ast_free(node->function.body);
             break;
                 }
 

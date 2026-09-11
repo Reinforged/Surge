@@ -14,7 +14,8 @@ typedef enum {
     AST_BINARY,
     AST_UNARY,
     AST_IF,
-    AST_WHILE
+    AST_WHILE,
+    AST_FUNCTION
 } AstNodeType;
 
 typedef struct AstNode AstNode;
@@ -75,6 +76,11 @@ struct AstNode {
             AstNode *condition;
             AstNode *body;
         } while_statement;
+        
+        struct {
+            char *name;
+            AstNode *body;
+        } function;
     };
 };
 
@@ -112,6 +118,11 @@ AstNode *ast_create_if(
 
 AstNode *ast_create_while(
     AstNode *condition,
+    AstNode *body
+);
+
+AstNode *ast_create_function(
+    const char *name,
     AstNode *body
 );
 

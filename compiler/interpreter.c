@@ -10,12 +10,19 @@ typedef struct {
     Value value;
 } Variable;
 
+typedef struct {
+    char *name;
+    AstNode *body;
+} Function;
+
 typedef struct Environment Environment;
 
 struct Environment {
     Variable *variables;
     int count;
     Environment *parent;
+    Function *functions;
+    int function_count;
 };
 
 static Environment *environment_create(Environment *parent)
@@ -27,7 +34,9 @@ static Environment *environment_create(Environment *parent)
         fprintf(stderr, "Surge: out of memory.\n");
         exit(1);
     }
-
+    
+    environment->functions = NULL;
+    environment->function_count = 0;
     environment->variables = NULL;
     environment->count = 0;
     environment->parent = parent;
@@ -46,6 +55,27 @@ static Variable *find_variable(Environment *environment, const char *name)
             if (strcmp(current->variables[i].name, name) == 0)
             {
                 return &current->variables[i];
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static Function *find_function(
+    Environment *environment,
+    const char *name
+)
+{
+    for (Environment *current = environment;
+         current != NULL;
+         current = current->parent)
+    {
+        for (int i = 0; i < current->function_count; i++)
+        {
+            if (strcmp(current->functions[i].name, name) == 0)
+            {
+                return &current->functions[i];
             }
         }
     }
@@ -105,9 +135,58 @@ static void environment_free(Environment *environment)
         free(environment->variables[i].name);
         value_free(&environment->variables[i].value);
     }
+    
+    for (int i = 0; i < environment->function_count; i++)
+    {
+        free(environment->functions[i].name);
+    }
 
     free(environment->variables);
+    free(environment->functions);
     free(environment);
+}
+
+static void define_function(
+    Environment *environment,
+    const char *name,
+    AstNode *body
+)
+{
+    Function *function = find_function(environment, name);
+
+    if (function != NULL)
+    {
+        function->body = body;
+        return;
+    }
+
+    Function *functions = realloc(
+        environment->functions,
+        sizeof(Function) * (environment->function_count + 1)
+    );
+
+    if (functions == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    environment->functions = functions;
+
+    Function *new_function =
+        &environment->functions[environment->function_count];
+
+    new_function->name = malloc(strlen(name) + 1);
+
+    if (new_function->name == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    strcpy(new_function->name, name);
+    new_function->body = body;
+    environment->function_count++;
 }
 
 static Value evaluate(
@@ -389,14 +468,27 @@ static void execute(
             }
             else
             {
-                fprintf(
-                    stderr,
-                    "Surge runtime error: "
-                    "unknown function '%s'.\n",
+                Function *function = find_function(
+                    environment,
                     node->call.name
                 );
 
-                exit(1);
+                if (function == NULL)
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: unknown function '%s'.\n",
+                        node->call.name
+                    );
+                    exit(1);
+                }
+
+                Environment *function_environment =
+                    environment_create(environment);
+
+                execute(function->body, function_environment);
+
+                environment_free(function_environment);
             }
 
             break;
@@ -407,6 +499,14 @@ static void execute(
         case AST_VARIABLE_REFERENCE:
         case AST_BINARY:
         case AST_UNARY:
+            break;
+            
+        case AST_FUNCTION:
+            define_function(
+                environment,
+                node->function.name,
+                node->function.body
+            );
             break;
 
         case AST_IF:

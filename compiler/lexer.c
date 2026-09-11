@@ -155,6 +155,35 @@ static Token identifier_token(Lexer *lexer)
     {
         return make_token(lexer, TOKEN_WHILE);
     }
+    
+    if (length == 8 &&
+        lexer->start[0] == 'f' &&
+        lexer->start[1] == 'u' &&
+        lexer->start[2] == 'n' &&
+        lexer->start[3] == 'c' &&
+        lexer->start[4] == 't' &&
+        lexer->start[5] == 'i' &&
+        lexer->start[6] == 'o' &&
+        lexer->start[7] == 'n')
+    {
+        return make_token(lexer, TOKEN_FUNCTION);
+    }
+
+    if (length == 3 &&
+        lexer->start[0] == 'd' &&
+        lexer->start[1] == 'e' &&
+        lexer->start[2] == 'f')
+    {
+        return make_token(lexer, TOKEN_FUNCTION);
+    }
+
+    if (length == 3 &&
+        lexer->start[0] == 'f' &&
+        lexer->start[1] == 'u' &&
+        lexer->start[2] == 'n')
+    {
+        return make_token(lexer, TOKEN_FUNCTION);
+    }
 
     return make_token(lexer, TOKEN_IDENTIFIER);
 }

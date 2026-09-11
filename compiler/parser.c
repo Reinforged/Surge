@@ -297,7 +297,12 @@ static AstNode *parse_call(Parser *parser)
         "Expected '(' after function name."
     );
 
-    AstNode *argument = parse_expression(parser);
+    AstNode *argument = NULL;
+
+    if (parser->current.type != TOKEN_RIGHT_PAREN)
+    {
+        argument = parse_expression(parser);
+    }
 
     consume(
         parser,
@@ -329,6 +334,7 @@ static AstNode *parse_and(Parser *parser);
 static AstNode *parse_not(Parser *parser);
 static AstNode *parse_if(Parser *parser);
 static AstNode *parse_while(Parser *parser);
+static AstNode *parse_function(Parser *parser);
 
 static AstNode *parse_block(Parser *parser)
 {
@@ -349,6 +355,14 @@ static AstNode *parse_block(Parser *parser)
         parser->current.type != TOKEN_EOF
     )
     {
+        
+        if (parser->current.type == TOKEN_FUNCTION)
+        {
+            advance(parser);
+            ast_program_add(block, parse_function(parser));
+            continue;
+        }
+        
         if (parser->current.type == TOKEN_IF)
         {
             advance(parser);
@@ -440,6 +454,24 @@ static AstNode *parse_while(Parser *parser)
     );
 }
 
+static AstNode *parse_function(Parser *parser)
+{
+    if (parser->current.type != TOKEN_IDENTIFIER)
+    {
+        parser_error(parser, "Expected function name.");
+    }
+
+    advance(parser);
+
+    char *name = token_to_string(parser->previous);
+    AstNode *body = parse_block(parser);
+    AstNode *function = ast_create_function(name, body);
+
+    free(name);
+
+    return function;
+}
+
 
 AstNode *parser_parse(Parser *parser)
 {
@@ -447,6 +479,14 @@ AstNode *parser_parse(Parser *parser)
 
     while (parser->current.type != TOKEN_EOF)
     {
+        
+        if (parser->current.type == TOKEN_FUNCTION)
+        {
+            advance(parser);
+            ast_program_add(program, parse_function(parser));
+            continue;
+        }
+        
         if (parser->current.type == TOKEN_IF)
         {
             advance(parser);
