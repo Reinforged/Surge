@@ -344,6 +344,9 @@ Token lexer_next(Lexer *lexer)
 
         case ')':
             return make_token(lexer, TOKEN_RIGHT_PAREN);
+            
+        case ',':
+            return make_token(lexer, TOKEN_COMMA);
 
         case '"':
             return string_token(lexer);

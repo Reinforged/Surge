@@ -79,6 +79,8 @@ struct AstNode {
         
         struct {
             char *name;
+            char **parameters;
+            int parameter_count;
             AstNode *body;
         } function;
     };
@@ -123,6 +125,8 @@ AstNode *ast_create_while(
 
 AstNode *ast_create_function(
     const char *name,
+    char **parameters,
+    int parameter_count,
     AstNode *body
 );
 

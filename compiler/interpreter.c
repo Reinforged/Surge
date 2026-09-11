@@ -12,6 +12,8 @@ typedef struct {
 
 typedef struct {
     char *name;
+    char **parameters;
+    int parameter_count;
     AstNode *body;
 } Function;
 
@@ -139,6 +141,15 @@ static void environment_free(Environment *environment)
     for (int i = 0; i < environment->function_count; i++)
     {
         free(environment->functions[i].name);
+
+        for (int j = 0;
+             j < environment->functions[i].parameter_count;
+             j++)
+        {
+            free(environment->functions[i].parameters[j]);
+        }
+
+        free(environment->functions[i].parameters);
     }
 
     free(environment->variables);
@@ -149,6 +160,8 @@ static void environment_free(Environment *environment)
 static void define_function(
     Environment *environment,
     const char *name,
+    char **parameters,
+    int parameter_count,
     AstNode *body
 )
 {
@@ -185,6 +198,41 @@ static void define_function(
     }
 
     strcpy(new_function->name, name);
+
+    new_function->parameter_count = parameter_count;
+
+    new_function->parameters = NULL;
+
+    if (parameter_count > 0)
+    {
+        new_function->parameters = malloc(
+            sizeof(char *) * parameter_count
+        );
+
+        if (new_function->parameters == NULL)
+        {
+            fprintf(stderr, "Surge: out of memory.\n");
+            exit(1);
+        }
+    }
+    
+    for (int i = 0; i < parameter_count; i++)
+    {
+        new_function->parameters[i] =
+            malloc(strlen(parameters[i]) + 1);
+
+        if (new_function->parameters[i] == NULL)
+        {
+            fprintf(stderr, "Surge: out of memory.\n");
+            exit(1);
+        }
+
+        strcpy(
+            new_function->parameters[i],
+            parameters[i]
+        );
+    }
+
     new_function->body = body;
     environment->function_count++;
 }
@@ -477,14 +525,40 @@ static void execute(
                 {
                     fprintf(
                         stderr,
-                        "Surge runtime error: unknown function '%s'.\n",
+                        "Surge runtime error: function '%s' is not defined.\n",
                         node->call.name
+                    );
+                    exit(1);
+                }
+
+                if (function->parameter_count !=
+                    (node->call.argument == NULL ? 0 : 1))
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: function '%s' expects %d argument(s).\n",
+                        node->call.name,
+                        function->parameter_count
                     );
                     exit(1);
                 }
 
                 Environment *function_environment =
                     environment_create(environment);
+
+                if (function->parameter_count == 1)
+                {
+                    Value argument = evaluate(
+                        node->call.argument,
+                        environment
+                    );
+
+                    set_variable(
+                        function_environment,
+                        function->parameters[0],
+                        argument
+                    );
+                }
 
                 execute(function->body, function_environment);
 
@@ -505,6 +579,8 @@ static void execute(
             define_function(
                 environment,
                 node->function.name,
+                node->function.parameters,
+                node->function.parameter_count,
                 node->function.body
             );
             break;

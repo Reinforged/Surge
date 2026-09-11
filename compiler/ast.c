@@ -231,6 +231,8 @@ AstNode *ast_create_while(
 
 AstNode *ast_create_function(
     const char *name,
+    char **parameters,
+    int parameter_count,
     AstNode *body
 )
 {
@@ -244,6 +246,8 @@ AstNode *ast_create_function(
 
     node->type = AST_FUNCTION;
     node->function.name = copy_string(name);
+    node->function.parameters = parameters;
+    node->function.parameter_count = parameter_count;
     node->function.body = body;
 
     return node;
@@ -437,14 +441,18 @@ void ast_print(AstNode *node, int indent) {
     }
 }
 
-void ast_free(AstNode *node) {
-    if (node == NULL) {
+void ast_free(AstNode *node)
+{
+    if (node == NULL)
+    {
         return;
     }
 
-    switch (node->type) {
+    switch (node->type)
+    {
         case AST_PROGRAM:
-            for (int i = 0; i < node->program.count; i++) {
+            for (int i = 0; i < node->program.count; i++)
+            {
                 ast_free(node->program.statements[i]);
             }
 
@@ -454,10 +462,10 @@ void ast_free(AstNode *node) {
         case AST_STRING:
             free(node->string.value);
             break;
-            
+
         case AST_INTEGER:
             break;
-            
+
         case AST_BOOLEAN:
             break;
 
@@ -465,7 +473,7 @@ void ast_free(AstNode *node) {
             free(node->call.name);
             ast_free(node->call.argument);
             break;
-            
+
         case AST_VARIABLE_DECLARATION:
             free(node->variable_declaration.name);
             ast_free(node->variable_declaration.value);
@@ -474,32 +482,39 @@ void ast_free(AstNode *node) {
         case AST_VARIABLE_REFERENCE:
             free(node->variable_reference.name);
             break;
-            
+
         case AST_BINARY:
             ast_free(node->binary.left);
             ast_free(node->binary.right);
             break;
-            
+
         case AST_UNARY:
-                    ast_free(node->unary.operand);
-                    break;
-            
+            ast_free(node->unary.operand);
+            break;
+
         case AST_IF:
             ast_free(node->if_statement.condition);
             ast_free(node->if_statement.body);
             ast_free(node->if_statement.else_body);
             break;
-            
+
         case AST_WHILE:
             ast_free(node->while_statement.condition);
             ast_free(node->while_statement.body);
             break;
-            
+
         case AST_FUNCTION:
             free(node->function.name);
+
+            for (int i = 0; i < node->function.parameter_count; i++)
+            {
+                free(node->function.parameters[i]);
+            }
+
+            free(node->function.parameters);
             ast_free(node->function.body);
             break;
-                }
+    }
 
     free(node);
 }

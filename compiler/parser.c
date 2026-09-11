@@ -464,8 +464,56 @@ static AstNode *parse_function(Parser *parser)
     advance(parser);
 
     char *name = token_to_string(parser->previous);
+
+    consume(
+        parser,
+        TOKEN_LEFT_PAREN,
+        "Expected '(' after function name."
+    );
+
+    char **parameters = NULL;
+    int parameter_count = 0;
+
+    if (parser->current.type != TOKEN_RIGHT_PAREN)
+    {
+        if (parser->current.type != TOKEN_IDENTIFIER)
+        {
+            parser_error(parser, "Expected parameter name.");
+        }
+
+        char **new_parameters = realloc(
+            parameters,
+            sizeof(char *) * (parameter_count + 1)
+        );
+
+        if (new_parameters == NULL)
+        {
+            fprintf(stderr, "Out of memory.\n");
+            exit(1);
+        }
+
+        parameters = new_parameters;
+        parameters[parameter_count] =
+            token_to_string(parser->current);
+
+        parameter_count++;
+        advance(parser);
+    }
+
+    consume(
+        parser,
+        TOKEN_RIGHT_PAREN,
+        "Expected ')' after function parameters."
+    );
+
     AstNode *body = parse_block(parser);
-    AstNode *function = ast_create_function(name, body);
+
+    AstNode *function = ast_create_function(
+        name,
+        parameters,
+        parameter_count,
+        body
+    );
 
     free(name);
 
