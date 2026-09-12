@@ -17,6 +17,11 @@ typedef struct {
     AstNode *body;
 } Function;
 
+typedef struct {
+    int returned;
+    Value value;
+} ExecutionResult;
+
 typedef struct Environment Environment;
 
 struct Environment {
@@ -237,6 +242,11 @@ static void define_function(
     environment->function_count++;
 }
 
+static ExecutionResult execute(
+    AstNode *node,
+    Environment *environment
+);
+
 static Value evaluate(
     AstNode *node,
     Environment *environment
@@ -264,19 +274,31 @@ static Value evaluate(
             environment
         );
 
-        if (operand.type != VALUE_BOOL)
-        {
-            fprintf(
-                stderr,
-                "Surge runtime error: 'not' requires a boolean value.\n"
-            );
-            exit(1);
-        }
-
         switch (node->unary.operator)
         {
             case TOKEN_NOT:
+                if (operand.type != VALUE_BOOL)
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: 'not' requires a boolean value.\n"
+                    );
+                    exit(1);
+                }
+
                 return value_bool(!operand.boolean);
+
+            case TOKEN_MINUS:
+                if (operand.type != VALUE_INT)
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: unary '-' requires an integer value.\n"
+                    );
+                    exit(1);
+                }
+
+                return value_int(-operand.integer);
 
             default:
                 fprintf(
@@ -310,6 +332,87 @@ static Value evaluate(
         }
 
         return variable->value;
+    }
+
+    if (node->type == AST_CALL)
+    {
+        if (strcmp(node->call.name, "print") == 0)
+        {
+            for (int i = 0; i < node->call.argument_count; i++)
+            {
+                Value argument = evaluate(
+                    node->call.arguments[i],
+                    environment
+                );
+
+                value_print(&argument);
+
+                if (argument.type == VALUE_STRING)
+                {
+                    value_free(&argument);
+                }
+            }
+
+            return value_int(0);
+        }
+
+        Function *function = find_function(
+            environment,
+            node->call.name
+        );
+
+        if (function == NULL)
+        {
+            fprintf(
+                stderr,
+                "Surge runtime error: function '%s' is not defined.\n",
+                node->call.name
+            );
+            exit(1);
+        }
+
+        if (function->parameter_count != node->call.argument_count)
+        {
+            fprintf(
+                stderr,
+                "Surge runtime error: function '%s' expects %d argument(s), got %d.\n",
+                node->call.name,
+                function->parameter_count,
+                node->call.argument_count
+            );
+            exit(1);
+        }
+
+        Environment *function_environment =
+            environment_create(environment);
+
+        for (int i = 0; i < function->parameter_count; i++)
+        {
+            Value argument = evaluate(
+                node->call.arguments[i],
+                environment
+            );
+
+            set_variable(
+                function_environment,
+                function->parameters[i],
+                argument
+            );
+
+            if (argument.type == VALUE_STRING)
+            {
+                value_free(&argument);
+            }
+        }
+
+        ExecutionResult function_result = execute(
+            function->body,
+            function_environment
+        );
+
+        environment_free(function_environment);
+
+        return function_result.value;
     }
 
     if (node->type == AST_BINARY)
@@ -466,14 +569,20 @@ static Value evaluate(
     exit(1);
 }
 
-static void execute(
+static ExecutionResult execute(
     AstNode *node,
     Environment *environment
 )
 {
+    
+    ExecutionResult result = {
+        0,
+        value_int(0)
+    };
+    
     if (node == NULL)
     {
-        return;
+        return result;
     }
 
     switch (node->type)
@@ -481,10 +590,15 @@ static void execute(
         case AST_PROGRAM:
             for (int i = 0; i < node->program.count; i++)
             {
-                execute(
+                result = execute(
                     node->program.statements[i],
                     environment
                 );
+
+                if (result.returned)
+                {
+                    return result;
+                }
             }
             break;
 
@@ -505,67 +619,16 @@ static void execute(
         }
 
         case AST_CALL:
-            if (strcmp(node->call.name, "print") == 0)
+        {
+            Value value = evaluate(node, environment);
+
+            if (value.type == VALUE_STRING)
             {
-                Value argument = evaluate(
-                    node->call.argument,
-                    environment
-                );
-
-                value_print(&argument);
-            }
-            else
-            {
-                Function *function = find_function(
-                    environment,
-                    node->call.name
-                );
-
-                if (function == NULL)
-                {
-                    fprintf(
-                        stderr,
-                        "Surge runtime error: function '%s' is not defined.\n",
-                        node->call.name
-                    );
-                    exit(1);
-                }
-
-                if (function->parameter_count !=
-                    (node->call.argument == NULL ? 0 : 1))
-                {
-                    fprintf(
-                        stderr,
-                        "Surge runtime error: function '%s' expects %d argument(s).\n",
-                        node->call.name,
-                        function->parameter_count
-                    );
-                    exit(1);
-                }
-
-                Environment *function_environment =
-                    environment_create(environment);
-
-                if (function->parameter_count == 1)
-                {
-                    Value argument = evaluate(
-                        node->call.argument,
-                        environment
-                    );
-
-                    set_variable(
-                        function_environment,
-                        function->parameters[0],
-                        argument
-                    );
-                }
-
-                execute(function->body, function_environment);
-
-                environment_free(function_environment);
+                value_free(&value);
             }
 
             break;
+        }
 
         case AST_STRING:
         case AST_INTEGER:
@@ -584,6 +647,18 @@ static void execute(
                 node->function.body
             );
             break;
+            
+        case AST_RETURN:
+        {
+            result.value = evaluate(
+                node->return_statement.value,
+                environment
+            );
+
+            result.returned = 1;
+
+            return result;
+        }
 
         case AST_IF:
         {
@@ -606,16 +681,26 @@ static void execute(
                 Environment *block =
                     environment_create(environment);
 
-                execute(node->if_statement.body, block);
+                result = execute(node->if_statement.body, block);
                 environment_free(block);
+
+                if (result.returned)
+                {
+                    return result;
+                }
             }
             else if (node->if_statement.else_body != NULL)
             {
                 Environment *block =
                     environment_create(environment);
 
-                execute(node->if_statement.else_body, block);
+                result = execute(node->if_statement.else_body, block);
                 environment_free(block);
+
+                if (result.returned)
+                {
+                    return result;
+                }
             }
 
             break;
@@ -647,14 +732,21 @@ static void execute(
                 Environment *block =
                     environment_create(environment);
 
-                execute(node->while_statement.body, block);
+                result = execute(node->while_statement.body, block);
 
                 environment_free(block);
+
+                if (result.returned)
+                {
+                    return result;
+                }
             }
 
             break;
         }
     }
+
+    return result;
 }
 
 void interpreter_run(AstNode *program)

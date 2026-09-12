@@ -96,6 +96,8 @@ static AstNode *parse_integer(Parser *parser)
     return ast_create_integer(value);
 }
 
+static AstNode *parse_call(Parser *parser);
+
 static AstNode *parse_primary(Parser *parser)
 {
     if (parser->current.type == TOKEN_STRING)
@@ -122,9 +124,24 @@ static AstNode *parse_primary(Parser *parser)
         return ast_create_boolean(0);
     }
 
+    if (parser->current.type == TOKEN_MINUS)
+    {
+        TokenType operator = parser->current.type;
+        advance(parser);
+
+        AstNode *operand = parse_primary(parser);
+
+        return ast_create_unary(operator, operand);
+    }
+
     if (parser->current.type == TOKEN_IDENTIFIER)
     {
         advance(parser);
+
+        if (parser->current.type == TOKEN_LEFT_PAREN)
+        {
+            return parse_call(parser);
+        }
 
         char *name = token_to_string(parser->previous);
         AstNode *node = ast_create_variable_reference(name);
@@ -347,6 +364,8 @@ static AstNode *parse_call(Parser *parser)
     return node;
 }
 
+
+
 void parser_init(Parser *parser, Lexer *lexer)
 {
     parser->lexer = lexer;
@@ -365,6 +384,7 @@ static AstNode *parse_not(Parser *parser);
 static AstNode *parse_if(Parser *parser);
 static AstNode *parse_while(Parser *parser);
 static AstNode *parse_function(Parser *parser);
+static AstNode *parse_return(Parser *parser);
 
 static AstNode *parse_block(Parser *parser)
 {
@@ -385,6 +405,13 @@ static AstNode *parse_block(Parser *parser)
         parser->current.type != TOKEN_EOF
     )
     {
+        
+        if (parser->current.type == TOKEN_RETURN)
+        {
+            advance(parser);
+            ast_program_add(block, parse_return(parser));
+            continue;
+        }
         
         if (parser->current.type == TOKEN_FUNCTION)
         {
@@ -560,6 +587,13 @@ static AstNode *parse_function(Parser *parser)
     return function;
 }
 
+static AstNode *parse_return(Parser *parser)
+{
+    AstNode *value = parse_expression(parser);
+
+    return ast_create_return(value);
+}
+
 
 AstNode *parser_parse(Parser *parser)
 {
@@ -567,6 +601,13 @@ AstNode *parser_parse(Parser *parser)
 
     while (parser->current.type != TOKEN_EOF)
     {
+        
+        if (parser->current.type == TOKEN_RETURN)
+        {
+            advance(parser);
+            ast_program_add(program, parse_return(parser));
+            continue;
+        }
         
         if (parser->current.type == TOKEN_FUNCTION)
         {
@@ -588,6 +629,7 @@ AstNode *parser_parse(Parser *parser)
             ast_program_add(program, parse_while(parser));
             continue;
         }
+    
 
         if (parser->current.type != TOKEN_IDENTIFIER)
         {
