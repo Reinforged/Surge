@@ -492,6 +492,11 @@ static AstNode *parse_if(Parser *parser)
             else_body = parse_block(parser);
         }
     }
+    else if (parser->current.type == TOKEN_ELIF)
+    {
+        advance(parser);
+        else_body = parse_if(parser);
+    }
 
     return ast_create_if(
         condition,

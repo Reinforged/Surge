@@ -103,6 +103,15 @@ static Token identifier_token(Lexer *lexer)
     {
         return make_token(lexer, TOKEN_ELSE);
     }
+
+    if (length == 4 &&
+        lexer->start[0] == 'e' &&
+        lexer->start[1] == 'l' &&
+        lexer->start[2] == 'i' &&
+        lexer->start[3] == 'f')
+    {
+        return make_token(lexer, TOKEN_ELIF);
+    }
     
     if (length == 4 &&
         lexer->start[0] == 't' &&
@@ -183,6 +192,17 @@ static Token identifier_token(Lexer *lexer)
         lexer->start[2] == 'n')
     {
         return make_token(lexer, TOKEN_FUNCTION);
+    }
+    
+    if (length == 6 &&
+        lexer->start[0] == 'r' &&
+        lexer->start[1] == 'e' &&
+        lexer->start[2] == 't' &&
+        lexer->start[3] == 'u' &&
+        lexer->start[4] == 'r' &&
+        lexer->start[5] == 'n')
+    {
+        return make_token(lexer, TOKEN_RETURN);
     }
 
     return make_token(lexer, TOKEN_IDENTIFIER);
