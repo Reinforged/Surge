@@ -400,11 +400,6 @@ static Value evaluate(
                 function->parameters[i],
                 argument
             );
-
-            if (argument.type == VALUE_STRING)
-            {
-                value_free(&argument);
-            }
         }
 
         ExecutionResult function_result = execute(
@@ -514,11 +509,74 @@ static Value evaluate(
             environment
         );
 
+        if (left.type == VALUE_STRING &&
+            right.type == VALUE_STRING)
+        {
+            switch (node->binary.operator)
+            {
+                case TOKEN_PLUS:
+                {
+                    size_t left_length = strlen(left.string);
+                    size_t right_length = strlen(right.string);
+
+                    char *result = malloc(
+                        left_length + right_length + 1
+                    );
+
+                    if (result == NULL)
+                    {
+                        fprintf(stderr, "Surge: out of memory.\n");
+                        exit(1);
+                    }
+
+                    memcpy(result, left.string, left_length);
+                    memcpy(
+                        result + left_length,
+                        right.string,
+                        right_length + 1
+                    );
+
+                    Value value = value_string(result);
+                    free(result);
+                    value_free(&left);
+                    value_free(&right);
+                    return value;
+                }
+
+                case TOKEN_EQUAL_EQUAL:
+                {
+                    int equal = strcmp(left.string, right.string) == 0;
+                    value_free(&left);
+                    value_free(&right);
+                    return value_bool(equal);
+                }
+
+                case TOKEN_BANG_EQUAL:
+                {
+                    int not_equal = strcmp(left.string, right.string) != 0;
+                    value_free(&left);
+                    value_free(&right);
+                    return value_bool(not_equal);
+                }
+
+                default:
+                    value_free(&left);
+                    value_free(&right);
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: unsupported string operator.\n"
+                    );
+                    exit(1);
+            }
+        }
+
         if (left.type != VALUE_INT || right.type != VALUE_INT)
         {
+            value_free(&left);
+            value_free(&right);
             fprintf(
                 stderr,
-                "Surge runtime error: comparison and arithmetic require integer values.\n"
+                "Surge runtime error: arithmetic and numeric comparisons require integer values.\n"
             );
             exit(1);
         }

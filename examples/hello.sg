@@ -17,6 +17,29 @@ print(falsehood)
 
 print("")
 
+print("=== STRING OPERATIONS ===")
+
+name = "Reinforged"
+greeting = "Hello, " + name
+print(greeting)
+
+first = "Hello"
+second = "world"
+combined = first + " " + second
+print(combined)
+
+print("hello" == "hello")
+print("hello" == "world")
+print("hello" != "world")
+print("hello" != "hello")
+
+fun make_greeting(name)
+    return "Hello, " + name
+
+print(make_greeting("Surge"))
+
+print("")
+
 print("=== ARITHMETIC ===")
 
 print(10 + 5)
