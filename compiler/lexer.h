@@ -35,7 +35,9 @@ typedef enum {
     TOKEN_MINUS,
     TOKEN_STAR,
     TOKEN_SLASH,
-    TOKEN_PERCENT
+    TOKEN_PERCENT,
+    TOKEN_LEFT_BRACKET,
+    TOKEN_RIGHT_BRACKET
 } TokenType;
 
 typedef struct {

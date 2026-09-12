@@ -18,7 +18,10 @@ typedef enum {
     AST_FUNCTION,
     AST_RETURN,
     AST_BREAK,
-    AST_CONTINUE
+    AST_CONTINUE,
+    AST_ARRAY,
+    AST_INDEX,
+    AST_INDEX_ASSIGNMENT
 } AstNodeType;
 
 typedef struct AstNode AstNode;
@@ -91,6 +94,22 @@ struct AstNode {
         struct {
             AstNode *value;
         } return_statement;
+
+        struct {
+            AstNode **elements;
+            int count;
+        } array;
+
+        struct {
+            AstNode *array;
+            AstNode *index;
+        } index;
+
+        struct {
+            AstNode *array;
+            AstNode *index;
+            AstNode *value;
+        } index_assignment;
     };
 };
 
@@ -146,6 +165,13 @@ AstNode *ast_create_function(
 AstNode *ast_create_return(AstNode *value);
 AstNode *ast_create_break(void);
 AstNode *ast_create_continue(void);
+AstNode *ast_create_array(AstNode **elements, int count);
+AstNode *ast_create_index(AstNode *array, AstNode *index);
+AstNode *ast_create_index_assignment(
+    AstNode *array,
+    AstNode *index,
+    AstNode *value
+);
 void ast_print(AstNode *node, int indent);
 void ast_free(AstNode *node);
 

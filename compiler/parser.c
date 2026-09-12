@@ -98,14 +98,72 @@ static AstNode *parse_integer(Parser *parser)
 
 static AstNode *parse_call(Parser *parser);
 static AstNode *parse_expression(Parser *parser);
+static AstNode *parse_index(Parser *parser, AstNode *array);
+
+static AstNode *parse_array(Parser *parser)
+{
+    AstNode **elements = NULL;
+    int count = 0;
+
+    if (parser->current.type != TOKEN_RIGHT_BRACKET)
+    {
+        while (1)
+        {
+            AstNode *element = parse_expression(parser);
+
+            AstNode **new_elements = realloc(
+                elements,
+                sizeof(AstNode *) * (size_t)(count + 1)
+            );
+
+            if (new_elements == NULL)
+            {
+                fprintf(stderr, "Surge: out of memory.\n");
+                exit(1);
+            }
+
+            elements = new_elements;
+            elements[count] = element;
+            count++;
+
+            if (parser->current.type != TOKEN_COMMA)
+            {
+                break;
+            }
+
+            advance(parser);
+        }
+    }
+
+    consume(
+        parser,
+        TOKEN_RIGHT_BRACKET,
+        "Expected ']' after array elements."
+    );
+
+    return ast_create_array(elements, count);
+}
+
+static AstNode *parse_postfix(Parser *parser, AstNode *node)
+{
+    while (parser->current.type == TOKEN_LEFT_BRACKET)
+    {
+        advance(parser);
+        node = parse_index(parser, node);
+    }
+
+    return node;
+}
 
 static AstNode *parse_primary(Parser *parser)
 {
+    AstNode *node = NULL;
+
     if (parser->current.type == TOKEN_LEFT_PAREN)
     {
         advance(parser);
 
-        AstNode *expression = parse_expression(parser);
+        node = parse_expression(parser);
 
         consume(
             parser,
@@ -113,31 +171,42 @@ static AstNode *parse_primary(Parser *parser)
             "Expected ')' after expression."
         );
 
-        return expression;
+        return parse_postfix(parser, node);
+    }
+
+    if (parser->current.type == TOKEN_LEFT_BRACKET)
+    {
+        advance(parser);
+        node = parse_array(parser);
+        return parse_postfix(parser, node);
     }
 
     if (parser->current.type == TOKEN_STRING)
     {
         advance(parser);
-        return parse_string(parser);
+        node = parse_string(parser);
+        return parse_postfix(parser, node);
     }
 
     if (parser->current.type == TOKEN_NUMBER)
     {
         advance(parser);
-        return parse_integer(parser);
+        node = parse_integer(parser);
+        return parse_postfix(parser, node);
     }
-    
+
     if (parser->current.type == TOKEN_TRUE)
     {
         advance(parser);
-        return ast_create_boolean(1);
+        node = ast_create_boolean(1);
+        return parse_postfix(parser, node);
     }
 
     if (parser->current.type == TOKEN_FALSE)
     {
         advance(parser);
-        return ast_create_boolean(0);
+        node = ast_create_boolean(0);
+        return parse_postfix(parser, node);
     }
 
     if (parser->current.type == TOKEN_MINUS)
@@ -145,9 +214,12 @@ static AstNode *parse_primary(Parser *parser)
         TokenType operator = parser->current.type;
         advance(parser);
 
-        AstNode *operand = parse_primary(parser);
+        node = ast_create_unary(
+            operator,
+            parse_primary(parser)
+        );
 
-        return ast_create_unary(operator, operand);
+        return parse_postfix(parser, node);
     }
 
     if (parser->current.type == TOKEN_IDENTIFIER)
@@ -156,18 +228,33 @@ static AstNode *parse_primary(Parser *parser)
 
         if (parser->current.type == TOKEN_LEFT_PAREN)
         {
-            return parse_call(parser);
+            node = parse_call(parser);
+        }
+        else
+        {
+            char *name = token_to_string(parser->previous);
+            node = ast_create_variable_reference(name);
+            free(name);
         }
 
-        char *name = token_to_string(parser->previous);
-        AstNode *node = ast_create_variable_reference(name);
-        free(name);
-
-        return node;
+        return parse_postfix(parser, node);
     }
 
     parser_error(parser, "Expected an expression.");
     return NULL;
+}
+
+static AstNode *parse_index(Parser *parser, AstNode *array)
+{
+    AstNode *index = parse_expression(parser);
+
+    consume(
+        parser,
+        TOKEN_RIGHT_BRACKET,
+        "Expected ']' after array index."
+    );
+
+    return ast_create_index(array, index);
 }
 
 static AstNode *parse_multiplication(Parser *parser)
@@ -319,6 +406,40 @@ static AstNode *parse_variable_declaration(Parser *parser)
     free(name);
 
     return declaration;
+}
+
+static AstNode *parse_index_assignment(Parser *parser, AstNode *array)
+{
+    while (parser->current.type == TOKEN_LEFT_BRACKET)
+    {
+        advance(parser);
+        array = parse_index(parser, array);
+    }
+
+    consume(
+        parser,
+        TOKEN_EQUAL,
+        "Expected '=' after array index."
+    );
+
+    AstNode *value = parse_expression(parser);
+
+    if (array->type != AST_INDEX)
+    {
+        ast_free(array);
+        ast_free(value);
+        parser_error(parser, "Expected an array index assignment.");
+    }
+
+    AstNode *assignment = ast_create_index_assignment(
+        array->index.array,
+        array->index.index,
+        value
+    );
+
+    free(array);
+
+    return assignment;
 }
 
 static AstNode *parse_call(Parser *parser)
@@ -483,6 +604,13 @@ static AstNode *parse_block(Parser *parser)
         else if (parser->current.type == TOKEN_LEFT_PAREN)
         {
             statement = parse_call(parser);
+        }
+        else if (parser->current.type == TOKEN_LEFT_BRACKET)
+        {
+            char *name = token_to_string(parser->previous);
+            AstNode *array = ast_create_variable_reference(name);
+            free(name);
+            statement = parse_index_assignment(parser, array);
         }
         else
         {
@@ -708,6 +836,13 @@ AstNode *parser_parse(Parser *parser)
         else if (parser->current.type == TOKEN_LEFT_PAREN)
         {
             statement = parse_call(parser);
+        }
+        else if (parser->current.type == TOKEN_LEFT_BRACKET)
+        {
+            char *name = token_to_string(parser->previous);
+            AstNode *array = ast_create_variable_reference(name);
+            free(name);
+            statement = parse_index_assignment(parser, array);
         }
         else
         {

@@ -440,6 +440,12 @@ Token lexer_next(Lexer *lexer)
 
         case '%':
             return make_token(lexer, TOKEN_PERCENT);
+
+        case '[':
+            return make_token(lexer, TOKEN_LEFT_BRACKET);
+
+        case ']':
+            return make_token(lexer, TOKEN_RIGHT_BRACKET);
     }
 
     return make_token(lexer, TOKEN_EOF);

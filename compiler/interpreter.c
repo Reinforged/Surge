@@ -252,6 +252,126 @@ static ExecutionResult execute(
 static Value evaluate(
     AstNode *node,
     Environment *environment
+);
+
+static Value *resolve_array_element(
+    AstNode *node,
+    Environment *environment
+)
+{
+    if (node->type == AST_VARIABLE_REFERENCE)
+    {
+        Variable *variable = find_variable(
+            environment,
+            node->variable_reference.name
+        );
+
+        if (variable == NULL)
+        {
+            fprintf(
+                stderr,
+                "Surge runtime error: variable '%s' is not defined.\n",
+                node->variable_reference.name
+            );
+            exit(1);
+        }
+
+        return &variable->value;
+    }
+
+    if (node->type == AST_INDEX)
+    {
+        Value *array = resolve_array_element(
+            node->index.array,
+            environment
+        );
+
+        Value index = evaluate(node->index.index, environment);
+
+        if (array->type != VALUE_ARRAY)
+        {
+            value_free(&index);
+            fprintf(
+                stderr,
+                "Surge runtime error: indexing requires an array.\n"
+            );
+            exit(1);
+        }
+
+        if (index.type != VALUE_INT)
+        {
+            value_free(&index);
+            fprintf(
+                stderr,
+                "Surge runtime error: array index must be an integer.\n"
+            );
+            exit(1);
+        }
+
+        if (index.integer < 0 || index.integer >= array->array.count)
+        {
+            value_free(&index);
+            fprintf(
+                stderr,
+                "Surge runtime error: array index out of bounds.\n"
+            );
+            exit(1);
+        }
+
+        Value *element = &array->array.elements[index.integer];
+        value_free(&index);
+        return element;
+    }
+
+    fprintf(
+        stderr,
+        "Surge runtime error: array assignment requires an array expression.\n"
+    );
+    exit(1);
+}
+
+static Value evaluate_index(
+    AstNode *array_node,
+    AstNode *index_node,
+    Environment *environment
+)
+{
+    Value array = evaluate(array_node, environment);
+    Value index = evaluate(index_node, environment);
+
+    if (array.type != VALUE_ARRAY)
+    {
+        value_free(&array);
+        value_free(&index);
+        fprintf(stderr, "Surge runtime error: indexing requires an array.\n");
+        exit(1);
+    }
+
+    if (index.type != VALUE_INT)
+    {
+        value_free(&array);
+        value_free(&index);
+        fprintf(stderr, "Surge runtime error: array index must be an integer.\n");
+        exit(1);
+    }
+
+    if (index.integer < 0 || index.integer >= array.array.count)
+    {
+        value_free(&array);
+        value_free(&index);
+        fprintf(stderr, "Surge runtime error: array index out of bounds.\n");
+        exit(1);
+    }
+
+    Value result = value_copy(&array.array.elements[index.integer]);
+    value_free(&array);
+    value_free(&index);
+    return result;
+}
+
+static Value evaluate(
+    AstNode *node,
+    Environment *environment
 )
 {
     if (node->type == AST_STRING)
@@ -267,6 +387,30 @@ static Value evaluate(
     if (node->type == AST_BOOLEAN)
     {
         return value_bool(node->boolean.value);
+    }
+
+    if (node->type == AST_ARRAY)
+    {
+        Value array = value_array(node->array.count);
+
+        for (int i = 0; i < node->array.count; i++)
+        {
+            array.array.elements[i] = evaluate(
+                node->array.elements[i],
+                environment
+            );
+        }
+
+        return array;
+    }
+
+    if (node->type == AST_INDEX)
+    {
+        return evaluate_index(
+            node->index.array,
+            node->index.index,
+            environment
+        );
     }
     
     if (node->type == AST_UNARY)
@@ -328,12 +472,7 @@ static Value evaluate(
             exit(1);
         }
 
-        if (variable->value.type == VALUE_STRING)
-        {
-            return value_string(variable->value.string);
-        }
-
-        return variable->value;
+        return value_copy(&variable->value);
     }
 
     if (node->type == AST_CALL)
@@ -349,10 +488,7 @@ static Value evaluate(
 
                 value_print(&argument);
 
-                if (argument.type == VALUE_STRING)
-                {
-                    value_free(&argument);
-                }
+                value_free(&argument);
             }
 
             return value_int(0);
@@ -705,10 +841,7 @@ static ExecutionResult execute(
         {
             Value value = evaluate(node, environment);
 
-            if (value.type == VALUE_STRING)
-            {
-                value_free(&value);
-            }
+            value_free(&value);
 
             break;
         }
@@ -719,8 +852,55 @@ static ExecutionResult execute(
         case AST_VARIABLE_REFERENCE:
         case AST_BINARY:
         case AST_UNARY:
+        case AST_ARRAY:
+        case AST_INDEX:
             break;
             
+        case AST_INDEX_ASSIGNMENT:
+        {
+            Value *array = resolve_array_element(
+                node->index_assignment.array,
+                environment
+            );
+            Value index = evaluate(
+                node->index_assignment.index,
+                environment
+            );
+            Value value = evaluate(
+                node->index_assignment.value,
+                environment
+            );
+
+            if (array->type != VALUE_ARRAY)
+            {
+                value_free(&index);
+                value_free(&value);
+                fprintf(stderr, "Surge runtime error: indexing requires an array.\n");
+                exit(1);
+            }
+
+            if (index.type != VALUE_INT)
+            {
+                value_free(&index);
+                value_free(&value);
+                fprintf(stderr, "Surge runtime error: array index must be an integer.\n");
+                exit(1);
+            }
+
+            if (index.integer < 0 || index.integer >= array->array.count)
+            {
+                value_free(&index);
+                value_free(&value);
+                fprintf(stderr, "Surge runtime error: array index out of bounds.\n");
+                exit(1);
+            }
+
+            value_free(&array->array.elements[index.integer]);
+            array->array.elements[index.integer] = value;
+            value_free(&index);
+            break;
+        }
+
         case AST_FUNCTION:
             define_function(
                 environment,

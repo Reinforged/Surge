@@ -286,6 +286,62 @@ AstNode *ast_create_return(AstNode *value)
     return node;
 }
 
+AstNode *ast_create_array(AstNode **elements, int count)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_ARRAY;
+    node->array.elements = elements;
+    node->array.count = count;
+
+    return node;
+}
+
+AstNode *ast_create_index(AstNode *array, AstNode *index)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_INDEX;
+    node->index.array = array;
+    node->index.index = index;
+
+    return node;
+}
+
+AstNode *ast_create_index_assignment(
+    AstNode *array,
+    AstNode *index,
+    AstNode *value
+)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_INDEX_ASSIGNMENT;
+    node->index_assignment.array = array;
+    node->index_assignment.index = index;
+    node->index_assignment.value = value;
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
@@ -465,6 +521,28 @@ void ast_print(AstNode *node, int indent) {
             );
             break;
 
+        case AST_ARRAY:
+            printf("ArrayLiteral\n");
+
+            for (int i = 0; i < node->array.count; i++)
+            {
+                ast_print(node->array.elements[i], indent + 1);
+            }
+            break;
+
+        case AST_INDEX:
+            printf("IndexExpression\n");
+            ast_print(node->index.array, indent + 1);
+            ast_print(node->index.index, indent + 1);
+            break;
+
+        case AST_INDEX_ASSIGNMENT:
+            printf("IndexAssignment\n");
+            ast_print(node->index_assignment.array, indent + 1);
+            ast_print(node->index_assignment.index, indent + 1);
+            ast_print(node->index_assignment.value, indent + 1);
+            break;
+
         case AST_IF:
             printf("IfStatement\n");
 
@@ -604,6 +682,25 @@ void ast_free(AstNode *node)
 
             free(node->function.parameters);
             ast_free(node->function.body);
+            break;
+
+        case AST_ARRAY:
+            for (int i = 0; i < node->array.count; i++)
+            {
+                ast_free(node->array.elements[i]);
+            }
+            free(node->array.elements);
+            break;
+
+        case AST_INDEX:
+            ast_free(node->index.array);
+            ast_free(node->index.index);
+            break;
+
+        case AST_INDEX_ASSIGNMENT:
+            ast_free(node->index_assignment.array);
+            ast_free(node->index_assignment.index);
+            ast_free(node->index_assignment.value);
             break;
             
         case AST_RETURN:
