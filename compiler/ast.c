@@ -270,10 +270,56 @@ AstNode *ast_create_function(
     return node;
 }
 
+AstNode *ast_create_return(AstNode *value)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_RETURN;
+    node->return_statement.value = value;
+
+    return node;
+}
+
 static void print_indent(int indent) {
     for (int i = 0; i < indent; i++) {
         printf("  ");
     }
+}
+
+AstNode *ast_create_break(void)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_BREAK;
+
+    return node;
+}
+
+AstNode *ast_create_continue(void)
+{
+    AstNode *node = malloc(sizeof(AstNode));
+
+    if (node == NULL)
+    {
+        fprintf(stderr, "Surge: out of memory.\n");
+        exit(1);
+    }
+
+    node->type = AST_CONTINUE;
+
+    return node;
 }
 
 void ast_print(AstNode *node, int indent) {
@@ -352,6 +398,10 @@ void ast_print(AstNode *node, int indent) {
 
                 case TOKEN_SLASH:
                     printf("/\n");
+                    break;
+
+                case TOKEN_PERCENT:
+                    printf("%%\n");
                     break;
 
                 case TOKEN_EQUAL_EQUAL:
@@ -457,6 +507,22 @@ void ast_print(AstNode *node, int indent) {
             printf("FunctionDeclaration: %s\n", node->function.name);
             ast_print(node->function.body, indent + 1);
             break;
+            
+        case AST_RETURN:
+            print_indent(indent);
+            printf("RETURN\n");
+            ast_print(node->return_statement.value, indent + 2);
+            break;
+
+        case AST_BREAK:
+            print_indent(indent);
+            printf("BREAK\n");
+            break;
+
+        case AST_CONTINUE:
+            print_indent(indent);
+            printf("CONTINUE\n");
+            break;
     }
 }
 
@@ -538,6 +604,16 @@ void ast_free(AstNode *node)
 
             free(node->function.parameters);
             ast_free(node->function.body);
+            break;
+            
+        case AST_RETURN:
+            ast_free(node->return_statement.value);
+            break;
+
+        case AST_BREAK:
+            break;
+
+        case AST_CONTINUE:
             break;
     }
 

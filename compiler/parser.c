@@ -97,9 +97,25 @@ static AstNode *parse_integer(Parser *parser)
 }
 
 static AstNode *parse_call(Parser *parser);
+static AstNode *parse_expression(Parser *parser);
 
 static AstNode *parse_primary(Parser *parser)
 {
+    if (parser->current.type == TOKEN_LEFT_PAREN)
+    {
+        advance(parser);
+
+        AstNode *expression = parse_expression(parser);
+
+        consume(
+            parser,
+            TOKEN_RIGHT_PAREN,
+            "Expected ')' after expression."
+        );
+
+        return expression;
+    }
+
     if (parser->current.type == TOKEN_STRING)
     {
         advance(parser);
@@ -160,7 +176,8 @@ static AstNode *parse_multiplication(Parser *parser)
 
     while (
         parser->current.type == TOKEN_STAR ||
-        parser->current.type == TOKEN_SLASH
+        parser->current.type == TOKEN_SLASH ||
+        parser->current.type == TOKEN_PERCENT
     )
     {
         TokenType operator = parser->current.type;
@@ -385,6 +402,8 @@ static AstNode *parse_if(Parser *parser);
 static AstNode *parse_while(Parser *parser);
 static AstNode *parse_function(Parser *parser);
 static AstNode *parse_return(Parser *parser);
+static AstNode *parse_break(void);
+static AstNode *parse_continue(void);
 
 static AstNode *parse_block(Parser *parser)
 {
@@ -410,6 +429,20 @@ static AstNode *parse_block(Parser *parser)
         {
             advance(parser);
             ast_program_add(block, parse_return(parser));
+            continue;
+        }
+
+        if (parser->current.type == TOKEN_BREAK)
+        {
+            advance(parser);
+            ast_program_add(block, parse_break());
+            continue;
+        }
+
+        if (parser->current.type == TOKEN_CONTINUE)
+        {
+            advance(parser);
+            ast_program_add(block, parse_continue());
             continue;
         }
         
@@ -527,17 +560,15 @@ static AstNode *parse_function(Parser *parser)
 
     char *name = token_to_string(parser->previous);
 
-    consume(
-        parser,
-        TOKEN_LEFT_PAREN,
-        "Expected '(' after function name."
-    );
-
     char **parameters = NULL;
     int parameter_count = 0;
 
-    if (parser->current.type != TOKEN_RIGHT_PAREN)
+    if (parser->current.type == TOKEN_LEFT_PAREN)
     {
+        advance(parser);
+
+        if (parser->current.type != TOKEN_RIGHT_PAREN)
+        {
         while (1)
         {
             if (parser->current.type != TOKEN_IDENTIFIER)
@@ -569,14 +600,15 @@ static AstNode *parse_function(Parser *parser)
             }
 
             advance(parser);
+            }
         }
-    }
 
-    consume(
-        parser,
-        TOKEN_RIGHT_PAREN,
-        "Expected ')' after function parameters."
-    );
+        consume(
+            parser,
+            TOKEN_RIGHT_PAREN,
+            "Expected ')' after function parameters."
+        );
+    }
 
     AstNode *body = parse_block(parser);
 
@@ -599,6 +631,16 @@ static AstNode *parse_return(Parser *parser)
     return ast_create_return(value);
 }
 
+static AstNode *parse_break(void)
+{
+    return ast_create_break();
+}
+
+static AstNode *parse_continue(void)
+{
+    return ast_create_continue();
+}
+
 
 AstNode *parser_parse(Parser *parser)
 {
@@ -611,6 +653,20 @@ AstNode *parser_parse(Parser *parser)
         {
             advance(parser);
             ast_program_add(program, parse_return(parser));
+            continue;
+        }
+
+        if (parser->current.type == TOKEN_BREAK)
+        {
+            advance(parser);
+            ast_program_add(program, parse_break());
+            continue;
+        }
+
+        if (parser->current.type == TOKEN_CONTINUE)
+        {
+            advance(parser);
+            ast_program_add(program, parse_continue());
             continue;
         }
         

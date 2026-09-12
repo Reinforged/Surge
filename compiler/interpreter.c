@@ -19,6 +19,8 @@ typedef struct {
 
 typedef struct {
     int returned;
+    int broke;
+    int continued;
     Value value;
 } ExecutionResult;
 
@@ -412,6 +414,15 @@ static Value evaluate(
 
         environment_free(function_environment);
 
+        if (function_result.broke || function_result.continued)
+        {
+            fprintf(
+                stderr,
+                "Surge runtime error: loop control statement outside of a loop.\n"
+            );
+            exit(1);
+        }
+
         return function_result.value;
     }
 
@@ -535,6 +546,18 @@ static Value evaluate(
 
                 return value_int(left.integer / right.integer);
 
+            case TOKEN_PERCENT:
+                if (right.integer == 0)
+                {
+                    fprintf(
+                        stderr,
+                        "Surge runtime error: modulo by zero.\n"
+                    );
+                    exit(1);
+                }
+
+                return value_int(left.integer % right.integer);
+
             case TOKEN_EQUAL_EQUAL:
                 return value_bool(left.integer == right.integer);
 
@@ -577,6 +600,8 @@ static ExecutionResult execute(
     
     ExecutionResult result = {
         0,
+        0,
+        0,
         value_int(0)
     };
     
@@ -595,7 +620,7 @@ static ExecutionResult execute(
                     environment
                 );
 
-                if (result.returned)
+                if (result.returned || result.broke || result.continued)
                 {
                     return result;
                 }
@@ -684,7 +709,7 @@ static ExecutionResult execute(
                 result = execute(node->if_statement.body, block);
                 environment_free(block);
 
-                if (result.returned)
+                if (result.returned || result.broke || result.continued)
                 {
                     return result;
                 }
@@ -697,7 +722,7 @@ static ExecutionResult execute(
                 result = execute(node->if_statement.else_body, block);
                 environment_free(block);
 
-                if (result.returned)
+                if (result.returned || result.broke || result.continued)
                 {
                     return result;
                 }
@@ -740,10 +765,30 @@ static ExecutionResult execute(
                 {
                     return result;
                 }
+
+                if (result.broke)
+                {
+                    result.broke = 0;
+                    return result;
+                }
+
+                if (result.continued)
+                {
+                    result.continued = 0;
+                    continue;
+                }
             }
 
             break;
         }
+
+        case AST_BREAK:
+            result.broke = 1;
+            return result;
+
+        case AST_CONTINUE:
+            result.continued = 1;
+            return result;
     }
 
     return result;
@@ -754,7 +799,16 @@ void interpreter_run(AstNode *program)
     Environment *environment =
         environment_create(NULL);
 
-    execute(program, environment);
+    ExecutionResult result = execute(program, environment);
 
     environment_free(environment);
+
+    if (result.broke || result.continued)
+    {
+        fprintf(
+            stderr,
+            "Surge runtime error: loop control statement outside of a loop.\n"
+        );
+        exit(1);
+    }
 }

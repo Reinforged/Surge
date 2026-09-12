@@ -15,7 +15,10 @@ typedef enum {
     AST_UNARY,
     AST_IF,
     AST_WHILE,
-    AST_FUNCTION
+    AST_FUNCTION,
+    AST_RETURN,
+    AST_BREAK,
+    AST_CONTINUE
 } AstNodeType;
 
 typedef struct AstNode AstNode;
@@ -84,6 +87,10 @@ struct AstNode {
             int parameter_count;
             AstNode *body;
         } function;
+        
+        struct {
+            AstNode *value;
+        } return_statement;
     };
 };
 
@@ -136,6 +143,9 @@ AstNode *ast_create_function(
     AstNode *body
 );
 
+AstNode *ast_create_return(AstNode *value);
+AstNode *ast_create_break(void);
+AstNode *ast_create_continue(void);
 void ast_print(AstNode *node, int indent);
 void ast_free(AstNode *node);
 

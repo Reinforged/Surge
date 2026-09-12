@@ -1,89 +1,339 @@
-print("=== SURGE INTEGRATION TEST ===")
+print("=== SURGE LANGUAGE TEST SUITE ===")
+print("")
 
-print("Testing variables")
-name = "Surge"
-age = 20
-enabled = true
-disabled = false
+print("=== VARIABLES ===")
 
-print(name)
-print(age)
-print(enabled)
-print(disabled)
+number = 42
+other = 8
+text = "Hello, Surge!"
+truth = true
+falsehood = false
 
-print("Testing arithmetic")
-a = 10
-b = 3
+print(number)
+print(other)
+print(text)
+print(truth)
+print(falsehood)
 
-print(a + b)
-print(a - b)
-print(a * b)
-print(a / b)
+print("")
 
-print("Testing comparisons")
-print(a == 10)
-print(a != b)
-print(a < b)
-print(a <= 10)
-print(a > b)
-print(a >= 10)
+print("=== ARITHMETIC ===")
 
-print("Testing logical operators")
+print(10 + 5)
+print(10 - 5)
+print(10 * 5)
+print(10 / 5)
+print(10 % 3)
+
+result = 10 + 5 * 2
+print(result)
+
+result = (10 + 5) * 2
+print(result)
+
+result = 100 / 5 + 7
+print(result)
+
+result = 20 - 3 * 4
+print(result)
+
+print("")
+
+print("=== COMPARISONS ===")
+
+print(10 == 10)
+print(10 == 5)
+print(10 != 5)
+print(10 != 10)
+print(10 > 5)
+print(5 > 10)
+print(10 >= 10)
+print(9 >= 10)
+print(5 < 10)
+print(10 < 5)
+print(10 <= 10)
+print(11 <= 10)
+
+print("")
+
+print("=== LOGICAL OPERATORS ===")
+
 print(true and true)
 print(true and false)
+print(false and true)
+print(false and false)
+
+print(true or true)
+print(true or false)
 print(false or true)
 print(false or false)
+
 print(not true)
 print(not false)
 
-print("Testing precedence")
-if true or false and false
-    print("OR precedence works")
+print(true and not false)
+print(false or true and true)
 
-if true and not false
-    print("AND and NOT precedence works")
+print("")
 
-print("Testing if")
-if age >= 18
-    print("Adult")
+print("=== IF / ELSE ===")
 
-print("Testing if else")
-age = 15
+if true
+    print("if: true")
 
-if age >= 18
-    print("Adult")
+if false
+    print("if: false")
 else
-    print("Minor")
+    print("else: reached")
 
-print("Testing else if")
-age = 16
-
-if age >= 18
-    print("Adult")
-else if age >= 13
-    print("Teenager")
+if 10 > 5
+    print("comparison: true")
 else
-    print("Child")
+    print("comparison: false")
 
-print("Testing while")
-count = 0
+if 10 < 5
+    print("comparison: false")
+else
+    print("comparison: true")
 
-while count < 5
-    print(count)
-    count = count + 1
+print("")
 
-print("Testing nested control flow")
-number = 0
+print("=== ELIF ===")
 
-while number < 5
-    if number < 3
-        print(number)
+value = 15
+
+if value > 20
+    print("greater than 20")
+elif value > 10
+    print("greater than 10")
+elif value > 5
+    print("greater than 5")
+else
+    print("5 or less")
+
+value = 8
+
+if value > 20
+    print("wrong")
+elif value > 10
+    print("wrong")
+elif value > 5
+    print("8 is between 5 and 10")
+else
+    print("wrong")
+
+value = 2
+
+if value > 20
+    print("wrong")
+elif value > 10
+    print("wrong")
+elif value > 5
+    print("wrong")
+else
+    print("2 is 5 or less")
+
+print("")
+
+print("=== WHILE LOOPS ===")
+
+counter = 0
+
+while counter < 5
+    print(counter)
+    counter = counter + 1
+
+print("loop finished")
+
+print("")
+
+print("=== WHILE + CONTINUE ===")
+
+counter = 0
+
+while counter < 10
+    counter = counter + 1
+
+    if counter == 3
+        continue
+
+    if counter == 6
+        continue
+
+    print(counter)
+
+print("continue finished")
+
+print("")
+
+print("=== WHILE + BREAK ===")
+
+counter = 0
+
+while counter < 10
+    counter = counter + 1
+
+    if counter == 6
+        break
+
+    print(counter)
+
+print("break finished")
+
+print("")
+
+print("=== NESTED CONTROL FLOW ===")
+
+outer = 0
+
+while outer < 3
+    outer = outer + 1
+
+    inner = 0
+
+    while inner < 3
+        inner = inner + 1
+
+        if inner == 2
+            continue
+
+        print(outer * 10 + inner)
+
+print("nested loops finished")
+
+print("")
+
+print("=== FUNCTIONS ===")
+
+fun greet
+    print("Hello from a function!")
+
+greet()
+greet()
+
+print("")
+
+print("=== FUNCTION PARAMETERS ===")
+
+fun show_number(x)
+    print(x)
+
+show_number(42)
+show_number(100)
+show_number(-7)
+
+print("")
+
+print("=== MULTIPLE PARAMETERS ===")
+
+fun add(a, b)
+    return a + b
+
+fun multiply(a, b)
+    return a * b
+
+print(add(10, 20))
+print(add(5, 7))
+print(multiply(6, 7))
+print(multiply(9, 4))
+
+print("")
+
+print("=== RETURN VALUES ===")
+
+fun get_answer
+    return 42
+
+answer = get_answer()
+print(answer)
+
+fun subtract(a, b)
+    return a - b
+
+result = subtract(20, 8)
+print(result)
+
+print("")
+
+print("=== FUNCTION CALLS IN EXPRESSIONS ===")
+
+fun double(x)
+    return x + x
+
+fun triple(x)
+    return x * 3
+
+print(double(5))
+print(triple(5))
+
+result = double(10) + 5
+print(result)
+
+result = triple(4) * 2
+print(result)
+
+print("")
+
+print("=== NESTED FUNCTION CALLS ===")
+
+fun quadruple(x)
+    return double(double(x))
+
+print(quadruple(5))
+
+fun add_three(a, b, c)
+    return a + b + c
+
+print(add_three(10, 20, 30))
+
+print("")
+
+print("=== CONDITIONAL RETURNS ===")
+
+fun classify(x)
+    if x > 10
+        return 1
+    elif x > 5
+        return 2
+    elif x > 0
+        return 3
     else
-        print(100 + number)
+        return 4
 
-    number = number + 1
+print(classify(15))
+print(classify(8))
+print(classify(3))
+print(classify(0))
 
-print("Testing reassignment")
+print("")
+
+print("=== EARLY RETURN ===")
+
+fun absolute(x)
+    if x < 0
+        return 0 - x
+
+    return x
+
+print(absolute(-15))
+print(absolute(15))
+print(absolute(-1))
+print(absolute(1))
+
+print("")
+
+print("=== LOCAL FUNCTION SCOPE ===")
+
+fun scoped_test
+    local_value = 123
+    print(local_value)
+
+scoped_test()
+
+print("")
+
+print("=== VARIABLE REASSIGNMENT ===")
+
 value = 10
 print(value)
 
@@ -93,4 +343,85 @@ print(value)
 value = value + 5
 print(value)
 
-print("=== TEST COMPLETE ===")    count = count + 1   
+value = value * 2
+print(value)
+
+print("")
+
+print("=== COMPLEX EXPRESSIONS ===")
+
+a = 10
+b = 5
+c = 2
+
+result = a + b * c
+print(result)
+
+result = (a + b) * c
+print(result)
+
+result = a > b and b > c
+print(result)
+
+result = a < b or b > c
+print(result)
+
+result = not (a < b)
+print(result)
+
+print("")
+
+print("=== FUNCTIONS + LOOPS ===")
+
+fun sum_to(limit)
+    total = 0
+    counter = 1
+
+    while counter <= limit
+        total = total + counter
+        counter = counter + 1
+
+    return total
+
+print(sum_to(5))
+print(sum_to(10))
+
+print("")
+
+print("=== FUNCTIONS + CONDITIONALS + LOOPS ===")
+
+fun find_first_large(limit)
+    counter = 0
+
+    while counter < limit
+        counter = counter + 1
+
+        if counter > 7
+            return counter
+
+    return 0
+
+print(find_first_large(10))
+print(find_first_large(5))
+
+print("")
+
+print("=== BIG COMBINED TEST ===")
+
+fun calculate(a, b)
+    total = add(a, b)
+
+    if total > 50
+        return total * 2
+    elif total > 20
+        return total + 10
+    else
+        return total
+
+print(calculate(10, 5))
+print(calculate(15, 10))
+print(calculate(30, 25))
+
+print("")
+
+print("=== ALL TESTS COMPLETE ===")

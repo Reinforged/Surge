@@ -23,6 +23,8 @@ typedef enum {
     TOKEN_WHILE,
     TOKEN_FUNCTION,
     TOKEN_RETURN,
+    TOKEN_BREAK,
+    TOKEN_CONTINUE,
     TOKEN_TRUE,
     TOKEN_FALSE,
     TOKEN_AND,
@@ -32,7 +34,8 @@ typedef enum {
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_STAR,
-    TOKEN_SLASH
+    TOKEN_SLASH,
+    TOKEN_PERCENT
 } TokenType;
 
 typedef struct {

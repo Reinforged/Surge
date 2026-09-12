@@ -205,6 +205,29 @@ static Token identifier_token(Lexer *lexer)
         return make_token(lexer, TOKEN_RETURN);
     }
 
+    if (length == 5 &&
+        lexer->start[0] == 'b' &&
+        lexer->start[1] == 'r' &&
+        lexer->start[2] == 'e' &&
+        lexer->start[3] == 'a' &&
+        lexer->start[4] == 'k')
+    {
+        return make_token(lexer, TOKEN_BREAK);
+    }
+
+    if (length == 8 &&
+        lexer->start[0] == 'c' &&
+        lexer->start[1] == 'o' &&
+        lexer->start[2] == 'n' &&
+        lexer->start[3] == 't' &&
+        lexer->start[4] == 'i' &&
+        lexer->start[5] == 'n' &&
+        lexer->start[6] == 'u' &&
+        lexer->start[7] == 'e')
+    {
+        return make_token(lexer, TOKEN_CONTINUE);
+    }
+
     return make_token(lexer, TOKEN_IDENTIFIER);
 }
 
@@ -414,6 +437,9 @@ Token lexer_next(Lexer *lexer)
 
         case '/':
             return make_token(lexer, TOKEN_SLASH);
+
+        case '%':
+            return make_token(lexer, TOKEN_PERCENT);
     }
 
     return make_token(lexer, TOKEN_EOF);
